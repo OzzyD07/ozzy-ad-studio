@@ -65,7 +65,7 @@ Bitti sayılır: Colab'da açılan sunucu, OtoReklam'dan video ve görsel işi a
 ## Faz 4 — Colab notebook ve senkron `[ ]`
 Bitti sayılır: yeni bir Colab oturumu tek "Hepsini çalıştır" ile güncel kod + doğrulanmış modellerle ayağa kalkar.
 - [ ] Hücre 1: Drive bağla, GitHub'dan `git fetch`, yerel commit ↔ uzak commit karşılaştır, gerekirse güncelle
-- [ ] `models/manifest.json`: model dosyaları + sha256; eksik/bozuksa indir
+- [ ] `models/manifest.json`: model dosyaları + sha256; eksik/bozuksa **Drive'a** indir, ComfyUI'ye bağla (K-23: bilgisayara model kurulmaz)
 - [ ] Hücre 2: ortam kurulumu (sabit sürümler, önbellek Drive'da)
 - [ ] Hücre 3: sunucuyu başlat, adresi ve durumu yazdır
 - [ ] Oturum düşerse kaldığı işleri raporlama
