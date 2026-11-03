@@ -200,11 +200,18 @@ def start_tunnel(port=8000):
     auth = secret('NGROK_AUTHTOKEN') or secret('NGROK_AUTH_TOKEN')
     if not auth:
         raise RuntimeError('Colab Secrets içinde NGROK_AUTHTOKEN yok (ve bu notebook\'a erişim izni verilmeli)')
-    ngrok.set_auth_token(auth)
     domain = secret('NGROK_DOMAIN')
-    for t in ngrok.get_tunnels():
-        ngrok.disconnect(t.public_url)
-    url = ngrok.connect(port, domain=domain).public_url if domain else ngrok.connect(port).public_url
+    try:
+        ngrok.set_auth_token(auth)
+    except Exception as e:  # Re-running with ngrok already up can fail to rewrite its config; the tunnel may still be fine.
+        print('ℹ️  ngrok jetonu yeniden yazılamadı:', str(e)[:120])
+    existing = [t for t in ngrok.get_tunnels() if t.config.get('addr', '').endswith(f':{port}')]
+    if existing and (not domain or domain in existing[0].public_url):
+        url = existing[0].public_url  # The tunnel survives a server restart; keep it.
+    else:
+        for t in ngrok.get_tunnels():
+            ngrok.disconnect(t.public_url)
+        url = ngrok.connect(port, domain=domain).public_url if domain else ngrok.connect(port).public_url
     health = _get(url + '/health', timeout=15)
     print(('✅' if health is not None else '⚠️ ') + ' Dış adres:', url, '| sağlık:', health)
     return url

@@ -3,6 +3,7 @@ import asyncio
 import json
 import os
 from contextlib import AsyncExitStack
+from pathlib import Path
 from datetime import timedelta
 
 
@@ -62,6 +63,9 @@ async def request(cfg, tool=None, arguments=None):
                 raise ValueError('config.json içinde MCP url gerekli.')
             headers = {}
             token = os.environ.get(cfg.get('token_env', 'VIDEO_MCP_TOKEN'))
+            token_file = Path(__file__).resolve().parent/cfg.get('token_file', '.secrets/studio_token')
+            if not token and token_file.is_file():
+                token = token_file.read_text(encoding='utf-8').strip()
             if token:
                 headers['Authorization'] = 'Bearer ' + token
             transport = streamablehttp_client(cfg['url'], headers=headers,

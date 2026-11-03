@@ -8,6 +8,8 @@ __pycache__/
 
 # Yerel ayarlar (MCP adresi vb.); şablon: config.example.json
 config.json
+# Studio MCP jetonu (MyDrive/OzzyAdStudio/.studio_token kopyası)
+.secrets/
 
 # Üretilen çıktılar
 YAYINA-HAZIR/
