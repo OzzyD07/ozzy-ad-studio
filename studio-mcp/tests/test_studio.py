@@ -143,6 +143,18 @@ class ServerTest(unittest.TestCase):
         self.assertEqual(e.exception.code, 401)
         with urllib.request.urlopen(f'http://127.0.0.1:{self.port}/health') as r:
             self.assertEqual(r.status, 200)
+        # Claude's connector form takes only a URL: the token may ride in ?key=.
+        from mcp import ClientSession
+        from mcp.client.streamable_http import streamablehttp_client
+
+        async def via_key(key):
+            async with streamablehttp_client(f'http://127.0.0.1:{self.port}/mcp?key={key}') as (r, w, _):
+                async with ClientSession(r, w) as session:
+                    await session.initialize()
+                    return len((await session.list_tools()).tools)
+        self.assertGreater(asyncio.run(via_key(TOKEN)), 10)
+        with self.assertRaises(BaseException):
+            asyncio.run(via_key('wrong'))
 
     def test_video_with_reference_end_to_end(self):
         asset = self.call('upload_asset', {'base64_data': base64.b64encode(b'png').decode(), 'filename': 'face.png'})

@@ -11,6 +11,7 @@ import mimetypes
 import shutil
 from pathlib import Path
 from typing import Any, Literal
+from urllib.parse import parse_qs
 
 from mcp.server.fastmcp import FastMCP
 from mcp.server.transport_security import TransportSecuritySettings
@@ -180,7 +181,8 @@ def build(settings: Settings, comfy=None, start_worker=True):
 
 
 class BearerAuth:
-    """ASGI middleware: everything except /health and signed /files needs the bearer token."""
+    """ASGI middleware: everything except /health and signed /files needs the token, as a bearer header or as
+    ?key=… in the URL (Claude's custom connector form only takes a URL)."""
 
     def __init__(self, app, token):
         self.app = app
@@ -189,7 +191,8 @@ class BearerAuth:
     async def __call__(self, scope, receive, send):
         if scope['type'] == 'http' and not scope['path'].startswith(('/health', '/files/')):
             given = dict(scope.get('headers') or []).get(b'authorization', b'')
-            if not hmac.compare_digest(given, b'Bearer ' + self.token):
+            key = parse_qs(scope.get('query_string', b'').decode()).get('key', [''])[0].encode()
+            if not (hmac.compare_digest(given, b'Bearer ' + self.token) or hmac.compare_digest(key, self.token)):
                 await Response('unauthorized', status_code=401, headers={'WWW-Authenticate': 'Bearer'})(scope, receive, send)
                 return
         await self.app(scope, receive, send)

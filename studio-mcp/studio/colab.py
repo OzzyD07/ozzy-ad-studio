@@ -177,9 +177,14 @@ def studio_token():
 
 
 def start_server(token, port=8000):
-    if _get(f'http://127.0.0.1:{port}/health'):
-        print('✅ Studio MCP zaten çalışıyor')
-        return True
+    """(Re)start the server so a code update from cell 1 takes effect; queued jobs live on Drive and resume."""
+    if _get(f'http://127.0.0.1:{port}/health') is not None:
+        subprocess.run(['pkill', '-f', 'studio.server'])
+        for _ in range(20):
+            if _get(f'http://127.0.0.1:{port}/health') is None:
+                break
+            time.sleep(.5)
+        print('🔄 Studio MCP yeniden başlatılıyor')
     LOGS.mkdir(exist_ok=True)
     env = {**os.environ, 'STUDIO_TOKEN': token, 'STUDIO_HOME': str(HOME), 'STUDIO_PORT': str(port)}
     subprocess.Popen(['python', '-m', 'studio.server'], cwd=CODE/'studio-mcp', env=env,
