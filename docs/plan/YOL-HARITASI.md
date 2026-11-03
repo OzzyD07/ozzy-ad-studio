@@ -46,7 +46,7 @@ Bitti sayılır: bir senaryodan ses + kelime zamanlaması üretilir ve Remotion 
 - [x] Piper `tr_TR` (dfki/fahrettin/fettah) kurulu ve test edildi, varsayılan kapalı (K-9)
 - [x] Fon müziği + konuşmada kısılma Remotion'da (Faz 1, `Music` bileşeni); spec'te `voiceover.text` → ses + senkron altyazı, `fitToVoiceover`
 
-## Faz 3 — Studio MCP v2 (Colab) `[~]`
+## Faz 3 — Studio MCP v2 (Colab) `[x]`
 Bitti sayılır: Colab'da açılan sunucu, OtoReklam'dan video ve görsel işi alıp sonucunu döndürür.
 - [x] Araç seti: `generate_video`, `generate_image`, `upload_asset`, `get_job`, `list_jobs`, `cancel_job`, `retry_job`, `reorder_job`, `list_models`, `server_status`, `free_vram`
 - [x] Asenkron iş modeli: submit → `job_id` → durum → imzalı sonuç bağlantısı; işler Drive'da, yeniden başlatmada tekrar sıraya girer
@@ -59,7 +59,7 @@ Bitti sayılır: Colab'da açılan sunucu, OtoReklam'dan video ve görsel işi a
 - [x] Erişim: sabit ngrok domain'i + **zorunlu** bearer token (Colab Secrets); adres repoya yazılmaz (K-11)
 - [x] Mevcut `generate_omni_video` / `get_job` / `upload_asset` uyumluluğu: OtoReklam istemcisi `config.json` değişmeden test edildi
 - [x] Testler: sahte ComfyUI ile uçtan uca 12 test (`studio-mcp/tests`)
-- [~] **Colab'da canlı doğrulama (G4, RTX PRO 6000 96 GB):** Qwen görseli 14 sn'de üretildi, yazısız ve temiz; MiniMax videosu sürüyor
+- [x] **Colab'da canlı doğrulama (G4, RTX PRO 6000 96 GB):** Qwen görseli 14 sn, yazısız; MiniMax 4 sn taslak video 576×992, 32 kHz stereo, konuşma Whisper ile birebir doğrulandı. Canlıda bulunup düzeltilenler: `audio_vae` şema doğrulaması, logda jeton maskeleme, yeniden başlatmada sahipsiz ComfyUI istemi
 - [x] Qwen 2.1 Turbo: resmi şablon (8 adım sabit, cfg 1); kalite = çözünürlük (draft 1 MP … max 4 MP)
 
 ## Faz 4 — Colab notebook ve senkron `[~]`
@@ -68,8 +68,10 @@ Bitti sayılır: yeni bir Colab oturumu tek "Hepsini çalıştır" ile güncel k
 - [x] `studio-mcp/models.json`: dosyalar + boyut + sha256; eksikler **Drive'a** iner, `extra_model_paths.yaml` ile ComfyUI'ye bağlanır (K-23). Qwen 2.1 Turbo bf16 indirildi
 - [x] Hücre 2: ComfyUI + bağımlılıklar
 - [x] Hücre 3–4: modeller, ComfyUI + Studio MCP + sabit ngrok adresi; hücre 4 sunucuyu güncel kodla yeniden başlatır
-- [ ] Oturum düşerse kaldığı işleri raporlama
+- [x] Oturum düşerse işler Drive'dan okunur, yarım kalan iş tekrar sıraya girer (canlıda görüldü)
 - [ ] Yerel `workspace/apps` için Drive yedeği (K-13)
+- [ ] Hız: modeller ilk yüklemede Drive'dan yavaş okunuyor (MiniMax ilk iş ~5 dk). İsteğe bağlı "Colab SSD'ye kopyala" modu (eski notebook'taki `fast_minimax` gibi)
+- [ ] Notebook'taki geçici hücreler yerine hücre 4'ün yeni sürümü (Colab GitHub kopyası yeniden açılınca gelir)
 
 ## Faz 5 — OtoReklam entegrasyonu `[ ]`
 Bitti sayılır: tek plandan dört içerik tipi de üretilip teslim klasörüne düşer.
