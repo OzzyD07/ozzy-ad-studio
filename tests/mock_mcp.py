@@ -24,8 +24,17 @@ def generate_omni_video(prompt: str, negative_prompt: str = '', images: list[str
 
 
 @server.tool()
+def generate_image(prompt: str, aspect_ratio: str = '4:5', quality: str = 'max', count: int = 1) -> dict:
+    """Return a queued synthetic image job (Studio MCP shape)."""
+    log({'tool': 'generate_image', 'prompt': prompt, 'aspect_ratio': aspect_ratio})
+    return {'job_id': f'img_{abs(hash(prompt)) % 10**8}', 'status': 'queued', 'job': {'status': 'queued'}}
+
+
+@server.tool()
 def get_job(job_id: str) -> dict:
     """Return the synthetic fixture path."""
+    if job_id.startswith('img_'):
+        return {'job': {'id': job_id, 'status': 'done', 'output_image': os.environ['TEST_IMAGE_PATH']}}
     return {'job': {'job_id': job_id, 'status': 'completed', 'output_video': os.environ['TEST_VIDEO_PATH']}}
 
 

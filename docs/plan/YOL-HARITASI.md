@@ -73,14 +73,16 @@ Bitti sayılır: yeni bir Colab oturumu tek "Hepsini çalıştır" ile güncel k
 - [ ] Hız: modeller ilk yüklemede Drive'dan yavaş okunuyor (MiniMax ilk iş ~5 dk). İsteğe bağlı "Colab SSD'ye kopyala" modu (eski notebook'taki `fast_minimax` gibi)
 - [ ] Notebook'taki geçici hücreler yerine hücre 4'ün yeni sürümü (Colab GitHub kopyası yeniden açılınca gelir)
 
-## Faz 5 — OtoReklam entegrasyonu `[ ]`
+## Faz 5 — OtoReklam entegrasyonu `[~]`
 Bitti sayılır: tek plandan dört içerik tipi de üretilip teslim klasörüne düşer.
-- [ ] İçerik tipleri: `ai_video`, `template_video`, `image_post`, `carousel`
-- [ ] `config.json`: tek MCP içinde video + görsel araç eşlemeleri
-- [ ] Strateji/plan: yeni formatlar için brif ve şablon seçimi
-- [ ] Bir AI klibinden birden çok kurgu (farklı hook, süre, altyazı stili)
-- [ ] `media.py` montaj/altyazı/end card işinin Remotion'a taşınması (eski yol yedek kalır)
-- [ ] Testler (`tests/`) ve `smoke_test.py` yeni akışa göre
+- [x] İçerik tipleri: `ai_video`, `template_video`, `image_post`, `carousel` (`formats.py`, plan + run)
+- [x] `config.json → mcp`: `image_tool`, `image_arguments`, `image_result_path` (varsayılanlar kodda)
+- [~] Plan yeni formatları okur; `strategy` brifinin formatları önermesi Faz 6'daki takvimle birlikte
+- [x] Bir AI klibinden birden çok kesit (`cuts`: kırpma, hook, altyazı stili); bitiş kartı konuşmayı bekler
+- [x] AI video bitirme Remotion'da (`render.engine = "remotion"`); FFmpeg yolu varsayılan/yedek. Çok çekimli montaj hâlâ FFmpeg
+- [x] `tests/test_formats.py` (54 test); yerelde gerçek Remotion + Whisper ile post, şablon video ve 2 kesit denendi
+- [ ] OtoReklam istemcisiyle canlı uçtan uca (Colab açık + `.secrets/studio_token`)
+- [ ] Varsayılanı `remotion` yapmak (kullanıcı görünümü onaylayınca)
 
 ## Faz 6 — Günlük 2 gönderi akışı `[ ]`
 Bitti sayılır: 14 günlük takvim, GPU bütçesine uygun format karışımıyla otomatik planlanır.

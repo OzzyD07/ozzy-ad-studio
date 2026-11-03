@@ -1,0 +1,51 @@
+{
+  "_": "product.json scripts entries for the non-video formats. Each entry is one day of the plan; 'format' picks the flow.",
+  "scripts": [
+    {
+      "format": "image_post",
+      "angle": "One line beats one page",
+      "caption": "Small entries, real patterns. #journaling",
+      "image_prompt": "A calm home desk by a window at golden hour: an open blank notebook, a pen and a mug of tea, editorial lifestyle photography.",
+      "aspect_ratio": "4:5",
+      "post": {"kicker": "Journaling tip", "title": "One line a day beats *one page* a month", "body": "Small entries, real patterns.", "cta": "Try free", "layout": "bottom"}
+    },
+    {
+      "format": "carousel",
+      "angle": "3 signs you need a reset",
+      "caption": "Which one is you? #selfcare",
+      "swipe_label": "SWIPE →",
+      "slides": [
+        {"title": "3 signs you need a *reset*", "layout": "center"},
+        {"kicker": "1", "title": "Every day feels the *same*", "image_prompt": "Rainy city window at dusk, soft bokeh, moody calm."},
+        {"kicker": "2", "title": "You forget what made you *happy*", "image_prompt": "Polaroid-style photos scattered on a wooden table, warm light."},
+        {"title": "Start with *one line* tonight", "cta": "Try free", "brand": true}
+      ]
+    },
+    {
+      "format": "template_video",
+      "angle": "Your week in one score",
+      "caption": "See your week at a glance.",
+      "promo": {
+        "voiceover": {"text": "Your week feels blurry? Write one line a day, and see the pattern in seven days.", "voice": "af_heart"},
+        "fitToVoiceover": true,
+        "captions": {"style": "box"},
+        "scenes": [
+          {"duration": 2, "kicker": "Sound familiar?", "title": "Your week feels *blurry*"},
+          {"duration": 2, "title": "Write *one line* a day", "media": {"src": "assets/refs/app-home.png", "device": "phone"}},
+          {"duration": 2, "title": "See the *pattern* in 7 days"}
+        ]
+      }
+    },
+    {
+      "angle": "AI video with two cuts",
+      "hook": "Too busy to journal?",
+      "voiceover": "Too busy to journal? One line a day is enough.",
+      "visual": "A woman on a sofa at dusk closes a paper notebook and smiles.",
+      "caption": "One line is enough.",
+      "cuts": [
+        {"name": "video"},
+        {"name": "kisa-hormozi", "trim": [0, 6], "hook_text": "POV: you finally journal", "caption_style": "hormozi"}
+      ]
+    }
+  ]
+}

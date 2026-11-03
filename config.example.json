@@ -45,7 +45,18 @@
     "result_path": "video_path",
     "remote_id_path": "job_id",
     "upload_tool": "upload_asset",
-    "upload_id_path": "asset_id"
+    "upload_id_path": "asset_id",
+    "image_tool": "generate_image",
+    "image_arguments": {
+      "prompt": "{{image_prompt}}",
+      "aspect_ratio": "{{aspect_ratio}}",
+      "quality": "max",
+      "count": 1
+    },
+    "image_result_path": "job.output_image"
+  },
+  "render": {
+    "engine": "ffmpeg"
   },
   "end_card": {
     "enabled": true,

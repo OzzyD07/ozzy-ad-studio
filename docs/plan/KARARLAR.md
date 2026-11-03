@@ -29,3 +29,6 @@ Her karar: tarih, ne seçildi, neden. Bir karar değişirse eskisi silinmez, "ye
 | K-23 | 2026-11-03 | Üretim modelleri (MiniMax H3, Qwen Image, ComfyUI ağırlıkları) yalnızca Drive'da durur; bilgisayara kurulmaz. Colab bunları Drive'dan ComfyUI'ye bağlar | Kullanıcı isteği; C: diski dolu. Bilgisayarda yalnızca küçük yerel modeller kalır: Kokoro, Piper, Whisper |
 | K-24 | 2026-11-03 | Qwen Image 2.1 Turbo **bf16** (Comfy-Org resmi); FP8 Turbo resmi depoda yok | En yüksek kalite; G4'ün 96 GB VRAM'i yetiyor. Yer gerekirse int8 seçilebilir |
 | K-25 | 2026-11-03 | Jeton Claude bağlayıcısı için URL'de (`/mcp?key=`) de kabul edilir; OtoReklam jetonu `.secrets/studio_token` dosyasından okur | Bağlayıcı formu başlık gönderemiyor; jeton repoya girmez ve onu kullanıcı yerleştirir |
+| K-26 | 2026-11-04 | Format, senaryodaki `format` alanıyla seçilir; yeni formatlar ayrı `formats.py` modülünde, AI video akışı aynen kalır | Çalışan MiniMax hattı bozulmadan genişlesin |
+| K-27 | 2026-11-04 | `run` her geçişte bir adım ilerletir (görsel gönder → sonraki geçişte indir + render) | Kuyruk GPU'yu beklerken bloklanmaz; Colab'daki toplu çalışma (K-10) bozulmaz |
+| K-28 | 2026-11-04 | Remotion bitirme isteğe bağlı (`render.engine`), varsayılan FFmpeg; kesitler yalnız Remotion'da | Görünüm kullanıcı tarafından onaylanmadan mevcut çıktı değişmesin |
