@@ -166,8 +166,9 @@ class Studio:
         if self.current:
             started = self.current.get('started_ts', time.time())
             eta += max(0, self.durations.get(self.current['engine'], 600) - (time.time() - started))
+        loaded = (self.current or {}).get('kind', self.loaded_kind)
         return {'queue_position': len(ahead) + 1, 'eta_seconds': int(eta),
-                'waits_for_model_switch': job['kind'] != (self.current or {}).get('kind', self.loaded_kind)}
+                'waits_for_model_switch': loaded is not None and job['kind'] != loaded}
 
     def cancel(self, job_id):
         with self.lock:

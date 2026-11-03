@@ -59,15 +59,15 @@ Bitti sayılır: Colab'da açılan sunucu, OtoReklam'dan video ve görsel işi a
 - [x] Erişim: sabit ngrok domain'i + **zorunlu** bearer token (Colab Secrets); adres repoya yazılmaz (K-11)
 - [x] Mevcut `generate_omni_video` / `get_job` / `upload_asset` uyumluluğu: OtoReklam istemcisi `config.json` değişmeden test edildi
 - [x] Testler: sahte ComfyUI ile uçtan uca 12 test (`studio-mcp/tests`)
-- [ ] **Colab'da canlı doğrulama:** gerçek GPU'da bir video ve bir görsel işi (Faz 4 notebook'u ile)
-- [ ] Qwen 2.1 Turbo ön ayarlarının (adım/cfg/shift) ilk gerçek çıktılara göre ayarlanması
+- [~] **Colab'da canlı doğrulama (G4, RTX PRO 6000 96 GB):** Qwen görseli 14 sn'de üretildi, yazısız ve temiz; MiniMax videosu sürüyor
+- [x] Qwen 2.1 Turbo: resmi şablon (8 adım sabit, cfg 1); kalite = çözünürlük (draft 1 MP … max 4 MP)
 
-## Faz 4 — Colab notebook ve senkron `[ ]`
+## Faz 4 — Colab notebook ve senkron `[~]`
 Bitti sayılır: yeni bir Colab oturumu tek "Hepsini çalıştır" ile güncel kod + doğrulanmış modellerle ayağa kalkar.
-- [ ] Hücre 1: Drive bağla, GitHub'dan `git fetch`, yerel commit ↔ uzak commit karşılaştır, gerekirse güncelle
-- [ ] `models/manifest.json`: model dosyaları + sha256; eksik/bozuksa **Drive'a** indir, ComfyUI'ye bağla (K-23: bilgisayara model kurulmaz)
-- [ ] Hücre 2: ortam kurulumu (sabit sürümler, önbellek Drive'da)
-- [ ] Hücre 3: sunucuyu başlat, adresi ve durumu yazdır
+- [x] Hücre 1: Drive bağla; Drive'daki kod (`MyDrive/OzzyAdStudio/code`) GitHub ile karşılaştırılır, yeniyse güncellenir
+- [x] `studio-mcp/models.json`: dosyalar + boyut + sha256; eksikler **Drive'a** iner, `extra_model_paths.yaml` ile ComfyUI'ye bağlanır (K-23). Qwen 2.1 Turbo bf16 indirildi
+- [x] Hücre 2: ComfyUI + bağımlılıklar
+- [x] Hücre 3–4: modeller, ComfyUI + Studio MCP + sabit ngrok adresi; hücre 4 sunucuyu güncel kodla yeniden başlatır
 - [ ] Oturum düşerse kaldığı işleri raporlama
 - [ ] Yerel `workspace/apps` için Drive yedeği (K-13)
 
