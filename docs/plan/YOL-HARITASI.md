@@ -84,11 +84,11 @@ Bitti sayılır: tek plandan dört içerik tipi de üretilip teslim klasörüne 
 - [ ] OtoReklam istemcisiyle canlı uçtan uca (Colab açık + `.secrets/studio_token`)
 - [ ] Varsayılanı `remotion` yapmak (kullanıcı görünümü onaylayınca)
 
-## Faz 6 — Günlük 2 gönderi akışı `[ ]`
+## Faz 6 — Günlük 2 gönderi akışı `[~]`
 Bitti sayılır: 14 günlük takvim, GPU bütçesine uygun format karışımıyla otomatik planlanır.
-- [ ] Takvim üretici: gün başına 2 slot, format karışımı kuralları
-- [ ] GPU bütçesi: günlük AI video/görsel sayısı sınırı
-- [ ] Pano (`pano`) ve teslim (`teslim`) tüm formatları gösterir
+- [x] `takvim.py` + `plan/strategy --per-day 2`: slotlar (sabah/akşam), brif her gün/slot için format önerir
+- [x] GPU bütçesi: haftalık video, günlük görsel sınırı + tahmini Colab süresi/birim plan dosyasında (süre tahminleri gerçek ölçümle güncellenecek)
+- [x] Pano ve teslim gün+slot bazlı; post ve carousel görselleri gösterilir/kopyalanır (`NN_tarih_slot`)
 - [ ] Platform açıklamaları (Instagram, TikTok, YouTube) her format için
 
 ---

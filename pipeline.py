@@ -18,6 +18,7 @@ from pathlib import Path
 
 import formats
 import minimax
+import takvim
 
 ROOT = Path(__file__).resolve().parent
 # Kept on disk for history, never worked on: cleaned-up clips and plans replaced by a revision.
@@ -175,7 +176,7 @@ Bu dosyalar yereldir; analiz komutu internete veri göndermez.
     print(f'{len(files)} dosya listelendi; bağlam: {ws / "analysis"}')
 
 
-def plan(product_path, research_path, start, days, ws):
+def plan(product_path, research_path, start, days, ws, cfg=None, per_day=None):
     product, research = read(product_path), read(research_path)
     for key in ['name', 'audience', 'features', 'cta', 'url']:
         if not product.get(key):
@@ -190,7 +191,7 @@ def plan(product_path, research_path, start, days, ws):
     if not 1 <= days <= 90:
         raise ValueError('Takvim 1–90 gün olmalı.')
     if product.get('scripts'):
-        return plan_scripts(product, findings, start, days, ws)
+        return plan_scripts(product, findings, start, days, ws, cfg, takvim.per_day(cfg, per_day))
     jobs = []
     angles = ['Problem ve çözüm', 'Özellik demosu', 'Kullanım senaryosu']
     for i in range(days):
@@ -316,19 +317,20 @@ def describe_refs(job):
     return (' · ref: ' + ', '.join(Path(f).name for f in refs)) if refs else ''
 
 
-def plan_scripts(product, findings, start, days, ws):
+def plan_scripts(product, findings, start, days, ws, cfg=None, per_day=1):
     language = product.get('language', 'tr')
-    if len(product['scripts']) < days:
+    if per_day == 1 and len(product['scripts']) < days:
         raise ValueError(f"{days} gün için en az {days} senaryo gerekli.")
+    entries = takvim.assign(product['scripts'], days, per_day, cfg)
     links = '\n'.join(f'{label}: {product[key]}' for label, key in
                       [('Android', 'url'), ('iOS', 'ios_url')] if product.get(key))
     jobs, issues = [], []
     existing = {(j.get('date'), j.get('angle')) for j in map(read, (ws/'jobs').glob('*.json'))
                 if j.get('role') != 'shot'}
-    lines = [f"# {product['name']} — {days}-day ad plan ({language})", '',
+    lines = [f"# {product['name']} — {days}-day ad plan ({language})"
+             + (f', {per_day} posts a day' if per_day > 1 else ''), '',
              'Conceptual vertical ads (MiniMax H3). Review every export before publishing.', '']
-    for i in range(days):
-        s = product['scripts'][i]
+    for i, day_index, slot, s in entries:
         video = s.get('format', 'ai_video') == 'ai_video'
         for key in ['angle', 'caption'] + ([] if s.get('shots') or not video else ['hook', 'voiceover', 'visual']):
             if not s.get(key):
@@ -341,7 +343,7 @@ def plan_scripts(product, findings, start, days, ws):
             raise ValueError(f'Senaryo {i+1}: seslendirme hook ile başlamalı.')
         if video:
             issues += minimax.lint_script(s, product, i+1)
-        day = (start + timedelta(days=i)).isoformat()
+        day = (start + timedelta(days=day_index)).isoformat()
         if (day, s['angle']) in existing:
             print(f"{day} — {s['angle']}: iş zaten var, korunuyor.")
             continue
@@ -355,13 +357,15 @@ def plan_scripts(product, findings, start, days, ws):
                   'model': product.get('video_model'), 'review_required': True}
         if s.get('cuts'):
             common['cuts'] = s['cuts']  # Several finished cuts of the same footage (Remotion).
+        if slot:
+            common['slot'] = slot  # Two posts a day: delivery and the board key on date + slot.
         if not video:
             job = formats.plan_job(s, common, base)
             jobs.append(job)
             what = (job['post']['title'] if s['format'] == 'image_post' else
                     f"{len(job['slides'])} slayt" if s['format'] == 'carousel' else
                     f"{len(job['promo']['scenes'])} sahne")
-            lines += [f"## {day} — {s['angle']} ({s['format']})", '', f'**İçerik:** {what}', '',
+            lines += [f"## {day}{' · ' + slot if slot else ''} — {s['angle']} ({s['format']})", '', f'**İçerik:** {what}', '',
                       f"**Caption:** {s['caption']}", '', f"**CTA:** {common['cta']} · Job: `{job['id']}`", '']
             continue
         if not s.get('shots'):
@@ -373,7 +377,7 @@ def plan_scripts(product, findings, start, days, ws):
                 job.pop(key)
             job.update(common, hook=s['hook'], hook_text=s.get('hook_text'))
             jobs.append(job)
-            lines += [f"## {day} — {s['angle']}", '', f"**Hook:** {s['hook']}", '',
+            lines += [f"## {day}{' · ' + slot if slot else ''} — {s['angle']}", '', f"**Hook:** {s['hook']}", '',
                       f"**Voiceover:** {s['voiceover']}", '', f"**Visual:** {s['visual']}{describe_refs(job)}", '',
                       f"**Caption:** {s['caption']}", '', f"**CTA:** {job['cta']} · Job: `{job['id']}`", '']
             continue
@@ -395,7 +399,7 @@ def plan_scripts(product, findings, start, days, ws):
             if job.get('source') != 'clip':
                 previous = job['id']
         jobs += hook_jobs + body_jobs
-        lines += [f"## {day} — {s['angle']}", '']
+        lines += [f"## {day}{' · ' + slot if slot else ''} — {s['angle']}", '']
         for k, hook_job in enumerate(hook_jobs):
             variant = chr(65+k) if len(hooks) > 1 else None
             shots = [hook_job] + body_jobs
@@ -427,10 +431,13 @@ def plan_scripts(product, findings, start, days, ws):
     calendar = ws/'plans'/f'calendar-{start}-{language}.csv'
     calendar.parent.mkdir(parents=True, exist_ok=True)
     with calendar.open('w', encoding='utf-8-sig', newline='') as f:
-        writer = csv.DictWriter(f, fieldnames=['id', 'date', 'timezone', 'angle', 'hook', 'caption', 'cta'])
+        writer = csv.DictWriter(f, fieldnames=['id', 'date', 'slot', 'format', 'timezone', 'angle', 'hook', 'caption', 'cta'])
         writer.writeheader()
         writer.writerows({k: j.get(k, '') for k in writer.fieldnames} for j in jobs if j.get('role') != 'shot')
-    (ws/'plans'/f'plan-{start}-{language}.md').write_text('\n'.join(lines), encoding='utf-8')
+    report, over = takvim.budget(jobs, cfg)
+    for w in over:
+        print('UYARI GPU bütçesi: ' + w)
+    (ws/'plans'/f'plan-{start}-{language}.md').write_text('\n'.join(lines[:4] + report + lines[4:]), encoding='utf-8')
     print(f'{len(jobs)} iş; takvim: {calendar}')
 
 
@@ -834,6 +841,7 @@ def main():
     a.add_argument('--product'); a.add_argument('--research')
     a.add_argument('--start', default=datetime.now(timezone(timedelta(hours=3))).date().isoformat())
     a.add_argument('--days', type=int, default=7)
+    a.add_argument('--per-day', type=int, help='Günde gönderi sayısı (varsayılan: calendar.per_day veya 1)')
     a = sub.add_parser('generate'); a.add_argument('id'); a.add_argument('--poll', action='store_true')
     a = sub.add_parser('attach'); a.add_argument('id'); a.add_argument('video')
     a = sub.add_parser('run'); a.add_argument('--limit', type=int, default=3)
@@ -845,6 +853,7 @@ def main():
     a.add_argument('--product'); a.add_argument('--research')
     a.add_argument('--start', default=datetime.now(timezone(timedelta(hours=3))).date().isoformat())
     a.add_argument('--days', type=int, default=7)
+    a.add_argument('--per-day', type=int, help='Günde gönderi sayısı; brif her gün/slot için format önerir')
     a = sub.add_parser('lint'); a.add_argument('--product')
     a = sub.add_parser('remotion', help='Remotion ile video/görsel üretir (AdVideo, TemplatePromo, PostStill, Carousel)')
     a.add_argument('spec', help='JSON: {"composition", "props", "output"}; örnekler examples/remotion/')
@@ -959,7 +968,8 @@ def main():
         print(json.dumps(result, ensure_ascii=False, indent=2))
     elif args.cmd == 'strategy':
         import strategy
-        strategy.build(read(args.product), read(args.research), args.start, args.days, ws)
+        strategy.build(read(args.product), read(args.research), args.start, args.days, ws, cfg=cfg,
+                       per_day=takvim.per_day(cfg, args.per_day))
     elif args.cmd == 'lint':
         lint(args.product, ws)
     elif args.cmd == 'remotion':
@@ -1006,7 +1016,7 @@ def main():
     else:
         with lock(ws):
             if args.cmd == 'plan':
-                plan(args.product, args.research, args.start, args.days, ws)
+                plan(args.product, args.research, args.start, args.days, ws, cfg, args.per_day)
             elif args.cmd == 'generate':
                 generate(args, cfg, ws)
             elif args.cmd == 'render':
