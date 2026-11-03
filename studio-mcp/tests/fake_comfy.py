@@ -8,9 +8,11 @@ from urllib.parse import parse_qs, urlparse
 
 MODELS = {
     'diffusion_models': ['minimax_h3_ref2va_pruned_bf16.safetensors', 'minimax_h3_ref2va_pruned_fp8_scaled.safetensors',
-                         'qwen_image_2.1_turbo_fp8_e4m3fn.safetensors', 'qwen_image_edit_fp8.safetensors'],
-    'text_encoders': ['qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors', 'qwen_2.5_vl_7b_fp8_scaled.safetensors'],
-    'vae': ['minimax_h3_video_vae_fp16.safetensors', 'qwen_image_vae.safetensors'],
+                         'qwen_image_2.1_turbo_int8_convrot.safetensors', 'qwen_image_2.1_turbo_bf16.safetensors',
+                         'qwen_image_2.1_bf16.safetensors'],
+    'text_encoders': ['qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors', 'qwen3vl_8b_int8_convrot.safetensors',
+                      'qwen3vl_8b_bf16.safetensors'],
+    'vae': ['minimax_h3_video_vae_fp16.safetensors', 'qwen_image_2.1_vae_bf16.safetensors'],
 }
 
 
@@ -41,7 +43,7 @@ class FakeComfy:
         if kind == 'SaveVideo':
             out = {'videos': [{'filename': f'{prompt_id}.mp4', 'subfolder': 'studio', 'type': 'output'}]}
         else:
-            count = workflow['7']['inputs']['batch_size']
+            count = next(n['inputs']['batch_size'] for n in workflow.values() if n['class_type'] == 'EmptyLatentImage')
             out = {'images': [{'filename': f'{prompt_id}_{i}.png', 'subfolder': 'studio', 'type': 'output'}
                               for i in range(count)]}
         self.history[prompt_id] = {'status': {'status_str': 'success', 'completed': True}, 'outputs': {save: out}}
@@ -63,6 +65,8 @@ class FakeComfy:
 
             def do_GET(self):
                 url = urlparse(self.path)
+                if url.path == '/object_info':
+                    return self.send(200, {})  # empty: schema validation is skipped
                 if url.path == '/system_stats':
                     return self.send(200, {'devices': [{'name': 'Fake RTX PRO 6000', 'vram_total': 96 * 1024**3,
                                                          'vram_free': 90 * 1024**3}]})
@@ -87,6 +91,9 @@ class FakeComfy:
                     return self.send(200, {'prompt_id': pid, 'node_errors': {}})
                 if self.path == '/free':
                     fake.events.append('free')
+                    return self.send(200, b'', 'text/plain')
+                if self.path == '/queue':
+                    fake.events.append('clear')
                     return self.send(200, b'', 'text/plain')
                 if self.path == '/interrupt':
                     return self.send(200, b'', 'text/plain')

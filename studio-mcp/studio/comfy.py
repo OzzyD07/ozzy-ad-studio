@@ -11,6 +11,10 @@ class ComfyError(RuntimeError):
     pass
 
 
+# Inputs engines add "when the node supports them"; any other unknown input is left for ComfyUI to reject loudly.
+OPTIONAL_INPUTS = {'audio_vae', 'device', 'format', 'weight_dtype', 'dtype', 'ref_image_size'}
+
+
 class Comfy:
     def __init__(self, url, timeout=30):
         self.url = url.rstrip('/')
@@ -35,6 +39,32 @@ class Comfy:
 
     def system_stats(self):
         return self._json('/system_stats')
+
+    def object_info(self):
+        if not getattr(self, '_object_info', None):
+            self._object_info = self._json('/object_info')
+        return self._object_info
+
+    def validate(self, workflow):
+        """Check the graph against ComfyUI's real node schemas (ported from OzzyVision-Lab): node classes that are
+        not installed fail with a readable error; inputs the engine adds "if supported" are dropped when a node does
+        not take them (e.g. MiniMaxH3ImageToVideo has no audio_vae). Returns the warnings."""
+        info = self.object_info()
+        if not info:
+            return []
+        missing = sorted({n['class_type'] for n in workflow.values() if n['class_type'] not in info})
+        if missing:
+            raise ComfyError('ComfyUI\'de düğüm yok: ' + ', '.join(missing) + ' (ComfyUI güncel mi?)')
+        warnings = []
+        for node_id, node in workflow.items():
+            spec = info[node['class_type']].get('input') or {}
+            accepted = {k for part in ('required', 'optional') for k in (spec.get(part) or {})}
+            for key in list(node.get('inputs', {})):
+                # Dotted names (ref_images.ref_image_0) are dynamic inputs that the schema does not list.
+                if key not in accepted and '.' not in key and key in OPTIONAL_INPUTS:
+                    del node['inputs'][key]
+                    warnings.append(f"{node_id} ({node['class_type']}): '{key}' desteklenmiyor, kaldırıldı")
+        return warnings
 
     def submit(self, workflow):
         """Returns ComfyUI's prompt_id; node validation errors come back as a readable message."""
@@ -98,6 +128,14 @@ class Comfy:
     def free(self):
         """Unload every model from VRAM (used when the queue switches between video and image models)."""
         self._json('/free', {'unload_models': True, 'free_memory': True})
+
+    def clear_queue(self):
+        """Drop pending prompts and stop the running one (after a server restart they belong to no job)."""
+        try:
+            self._json('/queue', {'clear': True})
+        except ComfyError:
+            pass
+        self.interrupt()
 
     def interrupt(self):
         try:

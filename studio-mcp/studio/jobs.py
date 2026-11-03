@@ -47,11 +47,16 @@ class Studio:
         self.current = None
         self.durations = {}  # engine -> recent run seconds, for ETA
         self.stop = False
+        interrupted = False
         for path in sorted((self.s.home/'jobs').glob('*.json')):
             job = json.loads(path.read_text(encoding='utf-8'))
             if job['status'] == 'running':  # Interrupted by a restart: run it again.
                 job.update(status='queued', note='sunucu yeniden başladı, iş tekrar sırada')
+                interrupted = True
             self.jobs[job['id']] = job
+        if interrupted:
+            # The old prompt is still on ComfyUI's GPU; drop it so the re-queued job does not render twice.
+            self.comfy.clear_queue()
         self.worker = threading.Thread(target=self._loop, name='studio-gpu', daemon=True)
 
     # ---------- store ----------
@@ -166,8 +171,9 @@ class Studio:
         if self.current:
             started = self.current.get('started_ts', time.time())
             eta += max(0, self.durations.get(self.current['engine'], 600) - (time.time() - started))
+        loaded = (self.current or {}).get('kind', self.loaded_kind)
         return {'queue_position': len(ahead) + 1, 'eta_seconds': int(eta),
-                'waits_for_model_switch': job['kind'] != (self.current or {}).get('kind', self.loaded_kind)}
+                'waits_for_model_switch': loaded is not None and job['kind'] != loaded}
 
     def cancel(self, job_id):
         with self.lock:
@@ -274,6 +280,9 @@ class Studio:
         engine = self.engines[job['engine']]
         refs = self._inputs(job)
         workflow, meta = engine.build({**job['request'], 'job_id': job['id']}, refs, self.model_files())
+        warnings = self.comfy.validate(workflow)
+        if warnings:
+            meta['workflow_warnings'] = warnings
         with self.lock:
             job['metadata'] = meta
             self._save(job)

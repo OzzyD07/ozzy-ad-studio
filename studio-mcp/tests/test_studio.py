@@ -58,19 +58,43 @@ class EngineTest(unittest.TestCase):
         self.assertEqual(wf['9']['inputs']['model'], ['50', 0])
         self.assertEqual(meta['steps'], 10)
 
+    def test_comfy_validate_drops_only_optional_inputs(self):
+        comfy = Comfy('http://unused')
+        comfy._object_info = {
+            'MiniMaxH3ImageToVideo': {'input': {'required': {'clip': [], 'vae': [], 'prompt': [], 'width': [],
+                                                             'height': [], 'length': []}}},
+            'LoadImage': {'input': {'required': {'image': []}}}}
+        wf = {'8': {'class_type': 'MiniMaxH3ImageToVideo',
+                    'inputs': {'clip': ['2', 0], 'audio_vae': ['4', 0], 'prompt': 'p', 'ref_images.ref_image_0': ['101', 0]}},
+              '101': {'class_type': 'LoadImage', 'inputs': {'image': 'a.png', 'typo': 1}}}
+        warnings = comfy.validate(wf)
+        self.assertNotIn('audio_vae', wf['8']['inputs'])
+        self.assertIn('ref_images.ref_image_0', wf['8']['inputs'])  # dynamic input kept
+        self.assertIn('typo', wf['101']['inputs'])  # unknown non-optional input is left for ComfyUI to reject
+        self.assertEqual(len(warnings), 1)
+        with self.assertRaisesRegex(Exception, 'düğüm yok: SaveVideo'):
+            comfy.validate({'1': {'class_type': 'SaveVideo', 'inputs': {}}})
+
     def test_minimax_validation(self):
         with self.assertRaises(EngineError):
             MiniMaxH3().validate({'duration': 20})
         with self.assertRaises(EngineError):
             MiniMaxH3().validate({'images': ['x'] * 10})
 
-    def test_qwen_picks_turbo_and_blocks_text(self):
+    def test_qwen_turbo_graph_quality_and_no_text(self):
         wf, meta = QwenImage().build({'prompt': 'calm desk', 'aspect_ratio': '4:5', 'count': 2}, {}, MODELS)
-        self.assertEqual(wf['1']['inputs']['unet_name'], 'qwen_image_2.1_turbo_fp8_e4m3fn.safetensors')
-        self.assertEqual((wf['7']['inputs']['width'], wf['7']['inputs']['height'], wf['7']['inputs']['batch_size']), (1184, 1472, 2))
-        self.assertIn('watermark', wf['6']['inputs']['text'])
-        wf, _ = QwenImage().build({'prompt': 'poster', 'text_ok': True}, {}, MODELS)
-        self.assertEqual(wf['6']['inputs']['text'], '')
+        self.assertEqual(wf['1']['inputs']['unet_name'], 'qwen_image_2.1_turbo_bf16.safetensors')
+        self.assertEqual(wf['2']['inputs']['clip_name'], 'qwen3vl_8b_bf16.safetensors')
+        latent = wf['6']['inputs']
+        self.assertEqual(latent['batch_size'], 2)
+        self.assertTrue(latent['width'] % 32 == 0 and latent['height'] % 32 == 0)
+        self.assertAlmostEqual(latent['width'] * latent['height'] / 1024**2, 4.0, delta=.1)  # max = native 2K
+        self.assertAlmostEqual(latent['width'] / latent['height'], .8, delta=.01)
+        self.assertIn('no text', wf['5']['inputs']['prompt'])  # cfg 1: negative is skipped, so ask in the prompt
+        self.assertEqual(wf['10']['inputs']['cfg'], 1.0)
+        wf, meta = QwenImage().build({'prompt': 'poster', 'text_ok': True, 'quality': 'draft'}, {}, MODELS)
+        self.assertEqual(wf['5']['inputs']['prompt'], 'poster')
+        self.assertEqual(meta['megapixels'], 1.0)
 
 
 def free_port():
@@ -136,6 +160,18 @@ class ServerTest(unittest.TestCase):
         self.assertEqual(e.exception.code, 401)
         with urllib.request.urlopen(f'http://127.0.0.1:{self.port}/health') as r:
             self.assertEqual(r.status, 200)
+        # Claude's connector form takes only a URL: the token may ride in ?key=.
+        from mcp import ClientSession
+        from mcp.client.streamable_http import streamablehttp_client
+
+        async def via_key(key):
+            async with streamablehttp_client(f'http://127.0.0.1:{self.port}/mcp?key={key}') as (r, w, _):
+                async with ClientSession(r, w) as session:
+                    await session.initialize()
+                    return len((await session.list_tools()).tools)
+        self.assertGreater(asyncio.run(via_key(TOKEN)), 10)
+        with self.assertRaises(BaseException):
+            asyncio.run(via_key('wrong'))
 
     def test_video_with_reference_end_to_end(self):
         asset = self.call('upload_asset', {'base64_data': base64.b64encode(b'png').decode(), 'filename': 'face.png'})
@@ -195,6 +231,7 @@ class ServerTest(unittest.TestCase):
         self.studio._save(job)
         _, again, _ = build(self.settings, Comfy(self.fake.url), start_worker=False)
         self.assertEqual(again.jobs[job_id]['status'], 'queued')
+        self.assertIn('clear', self.fake.events)  # the orphaned ComfyUI prompt is dropped
 
     def test_status_and_models(self):
         status = self.call('server_status')
