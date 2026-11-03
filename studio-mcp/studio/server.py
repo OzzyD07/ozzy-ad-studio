@@ -7,6 +7,8 @@ Every MCP request needs "Authorization: Bearer $STUDIO_TOKEN" (K-11). Output fil
 """
 import argparse
 import hmac
+import logging
+import re
 import mimetypes
 import shutil
 from pathlib import Path
@@ -198,8 +200,24 @@ class BearerAuth:
         await self.app(scope, receive, send)
 
 
+class RedactKey(logging.Filter):
+    """Access logs print request URLs; connector requests carry the token as ?key=, so mask it."""
+
+    def filter(self, record):
+        if record.args:
+            record.args = tuple(re.sub(r'([?&]key=)[^&\s"]+', r'\1***', a) if isinstance(a, str) else a
+                                for a in record.args)
+        record.msg = re.sub(r'([?&]key=)[^&\s"]+', r'\1***', str(record.msg))
+        return True
+
+
 def main():
+    import copy
     import uvicorn
+    from uvicorn.config import LOGGING_CONFIG
+    log_config = copy.deepcopy(LOGGING_CONFIG)
+    log_config.setdefault('filters', {})['redact_key'] = {'()': RedactKey}
+    log_config['handlers']['access']['filters'] = ['redact_key']
     parser = argparse.ArgumentParser(description='Ozzy Ad Studio MCP')
     parser.add_argument('--port', type=int)
     args = parser.parse_args()
@@ -207,7 +225,7 @@ def main():
     if len(settings.token) < 16:
         raise SystemExit('STUDIO_TOKEN en az 16 karakter olmalı (K-11). Colab Secrets → STUDIO_TOKEN')
     app, _, _ = build(settings)
-    uvicorn.run(app, host=settings.host, port=settings.port, log_level='info')
+    uvicorn.run(app, host=settings.host, port=settings.port, log_level='info', log_config=log_config)
 
 
 if __name__ == '__main__':
