@@ -1,0 +1,20 @@
+{
+  "findings": [
+    {
+      "finding": "Gerçek araştırma bulgusunu buraya yazın; bu bir örnek şemadır",
+      "url": "https://example.com/replace-with-real-source",
+      "checked_on": "2026-10-18",
+      "implication": "Bu bulgunun reklam fikrine etkisini yazın"
+    }
+  ],
+  "trends": [
+    {
+      "topic": "Örnek: sınav haftası",
+      "angle": "Gündemi ürünün çözdüğü probleme tek cümleyle bağlayın",
+      "date": "2026-11-03",
+      "expires": "2026-11-07",
+      "source": "https://example.com/replace-with-real-source",
+      "checked_on": "2026-10-29"
+    }
+  ]
+}

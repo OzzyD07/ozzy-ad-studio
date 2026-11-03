@@ -1,0 +1,72 @@
+{
+  "workspace": "workspace",
+  "video": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "crf": 20,
+    "fit": "auto",
+    "sharpen": true
+  },
+  "whisper": {
+    "model": "small",
+    "device": "cpu",
+    "compute_type": "int8",
+    "language": "tr"
+  },
+  "cta": {
+    "text": "Hemen keşfet",
+    "seconds": 4
+  },
+  "subtitles": {
+    "style": "pop",
+    "font": "",
+    "fonts_dir": "assets/fonts",
+    "margin_v": 640
+  },
+  "mcp": {
+    "transport": "stdio",
+    "command": "",
+    "args": [],
+    "env": {},
+    "url": "",
+    "token_env": "VIDEO_MCP_TOKEN",
+    "timeout_seconds": 900,
+    "generate_tool": "",
+    "generate_arguments": {
+      "prompt": "{{prompt}}",
+      "request_id": "{{id}}"
+    },
+    "status_tool": "",
+    "status_arguments": {
+      "job_id": "{{remote_id}}"
+    },
+    "result_path": "video_path",
+    "remote_id_path": "job_id",
+    "upload_tool": "upload_asset",
+    "upload_id_path": "asset_id"
+  },
+  "end_card": {
+    "enabled": true,
+    "seconds": 3.0,
+    "extend_seconds": 1.5,
+    "icon": "assets/app-icon.png",
+    "badges_dir": "assets/badges",
+    "badge_height": 118,
+    "stores": [
+      "app_store",
+      "google_play"
+    ]
+  },
+  "edit": {
+    "transition": "fade",
+    "transition_seconds": 0.35
+  },
+  "audio": {
+    "loudnorm": true
+  },
+  "music": {
+    "file": "",
+    "volume": 0.22
+  }
+}

@@ -1,0 +1,30 @@
+# Python / ortam
+.venv/
+.tmp/
+__pycache__/
+*.pyc
+*.log
+.env
+
+# Yerel ayarlar (MCP adresi vb.); şablon: config.example.json
+config.json
+
+# Üretilen çıktılar
+YAYINA-HAZIR/
+
+# workspace: yalnızca uygulama verisi (analiz, plan, iş kayıtları) izlenir
+workspace/*
+!workspace/apps/
+workspace/apps/*/exports/
+workspace/apps/*/raw/
+workspace/apps/*/review/
+workspace/apps/*/pano.html
+workspace/**/*.mp4
+workspace/**/*.mov
+workspace/**/*.mp3
+workspace/**/*.wav
+
+# Remotion / Node
+node_modules/
+remotion/out/
+remotion/.remotion/

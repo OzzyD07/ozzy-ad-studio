@@ -1,0 +1,7 @@
+{
+  "name": "UYGULAMA_ADI",
+  "audience": "Hedef kullanıcı grubunu yazın",
+  "features": ["Koddan veya çalışan uygulamadan doğrulanmış bir özellik"],
+  "cta": "Hemen keşfet",
+  "url": "https://example.com"
+}

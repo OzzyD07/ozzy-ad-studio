@@ -1,0 +1,53 @@
+{
+  "name": "DemoApp",
+  "language": "en",
+  "category": "mobile journaling app",
+  "audience": "English-speaking adults (18–40) who want a calm evening routine",
+  "features": ["journal and mood logging"],
+  "cta": "Try DemoApp",
+  "url": "https://play.google.com/store/apps/details?id=com.example.app",
+  "ios_url": "https://apps.apple.com/app/id0000000000",
+  "video_model": "minimax_h3",
+  "strategy_hints": {"outcome": "remember your days", "effort": "three lines a night", "pain": "days that blur together"},
+  "look": {
+    "character": "a woman in her late 20s with shoulder-length dark wavy hair, oatmeal knit sweater, no jewellery",
+    "setting": "a cosy apartment living room with a wooden table, plants and a warm floor lamp",
+    "lighting": "golden-hour window light turning into warm lamp light",
+    "references": [],
+    "voice_reference": ""
+  },
+  "scripts": [
+    {
+      "angle": "Three lines tonight",
+      "feature": "journal and mood logging",
+      "caption": "Three lines a night. That's the whole habit. #journaling #nightroutine #DemoApp",
+      "cta": "Try DemoApp",
+      "emphasis": ["three lines", "tonight"],
+      "hooks": [
+        {
+          "duration": 6,
+          "camera": ["Push in"],
+          "visual": "Close-up: the main character drops onto the sofa, exhales and rubs her eyes; the evening city glows outside the window.",
+          "voiceover": "Does every day feel exactly the same?",
+          "hook_text": "Every day feels the same?"
+        },
+        {
+          "duration": 6,
+          "camera": ["Tracking shot"],
+          "visual": "The main character walks in, switches on a warm floor lamp and smiles at a blank notebook waiting on the table.",
+          "voiceover": "Here's a two-minute habit for tonight.",
+          "hook_text": "A 2-minute habit for tonight"
+        }
+      ],
+      "shots": [
+        {
+          "duration": 13,
+          "camera": ["Static shot"],
+          "visual": "Side view: the main character writes three short lines in the notebook (page never visible), then sets the pen down and smiles calmly.",
+          "voiceover": "Open DemoApp, write three lines and pick your mood. Small notes that keep your days from blurring. Try DemoApp.",
+          "transition": "fade"
+        }
+      ]
+    }
+  ]
+}
