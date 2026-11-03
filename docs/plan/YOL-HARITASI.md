@@ -46,23 +46,26 @@ Bitti sayılır: bir senaryodan ses + kelime zamanlaması üretilir ve Remotion 
 - [x] Piper `tr_TR` (dfki/fahrettin/fettah) kurulu ve test edildi, varsayılan kapalı (K-9)
 - [x] Fon müziği + konuşmada kısılma Remotion'da (Faz 1, `Music` bileşeni); spec'te `voiceover.text` → ses + senkron altyazı, `fitToVoiceover`
 
-## Faz 3 — Studio MCP v2 (Colab) `[ ]`
+## Faz 3 — Studio MCP v2 (Colab) `[~]`
 Bitti sayılır: Colab'da açılan sunucu, OtoReklam'dan video ve görsel işi alıp sonucunu döndürür.
-- [ ] Araç seti: `generate_video`, `generate_image`, `upload_asset`, `get_job`, `list_jobs`, `cancel_job`, `server_status`
-- [ ] Asenkron iş modeli: submit → `job_id` → durum → sonuç URL'si
-- [ ] Sunucu kodu bu repoda: `studio-mcp/` (K-8)
-- [ ] Model yöneticisi, toplu çalışma (K-10): VRAM'de tek model; kuyruk tipe göre gruplanır, önce tüm video işleri,
+- [x] Araç seti: `generate_video`, `generate_image`, `upload_asset`, `get_job`, `list_jobs`, `cancel_job`, `retry_job`, `reorder_job`, `list_models`, `server_status`, `free_vram`
+- [x] Asenkron iş modeli: submit → `job_id` → durum → imzalı sonuç bağlantısı; işler Drive'da, yeniden başlatmada tekrar sıraya girer
+- [x] Sunucu kodu bu repoda: `studio-mcp/` (K-8); MiniMax motoru OzzyVision-Lab'dan taşındı (K-20)
+- [x] Model yöneticisi, toplu çalışma (K-10): VRAM'de tek model; kuyruk tipe göre gruplanır, önce tüm video işleri,
       sonra VRAM temizlenip Qwen yüklenir ve tüm görseller üretilir. Aynı tip işler arasında model yeniden yüklenmez.
-- [ ] Kuyruk görünürlüğü: `get_job` sıradaki konumu ve "model değişimi bekleniyor" durumunu döndürür
-- [ ] "Max kalite" ön ayarı: yüksek step, sabit seed seçeneği, `ref_image_size=max`, referans sadakati ayarları
-- [ ] Qwen için varsayılan "yazısız" negatif prompt (metin/logo Remotion'da eklenir)
-- [ ] Erişim: sabit ngrok domain'i + **zorunlu** bearer token (Colab Secrets); adres repoya yazılmaz (K-11)
-- [ ] Mevcut `generate_omni_video` / `get_job` uyumluluğu (geçiş süresince)
+- [x] Kuyruk görünürlüğü: `get_job` sıradaki konumu ve "model değişimi bekleniyor" durumunu döndürür
+- [x] "Max kalite" ön ayarı: 10 adım, sabit seed seçeneği, `ref_image_size=max` (2048 px referans)
+- [x] Qwen için varsayılan "yazısız" negatif prompt (metin/logo Remotion'da eklenir)
+- [x] Erişim: sabit ngrok domain'i + **zorunlu** bearer token (Colab Secrets); adres repoya yazılmaz (K-11)
+- [x] Mevcut `generate_omni_video` / `get_job` / `upload_asset` uyumluluğu: OtoReklam istemcisi `config.json` değişmeden test edildi
+- [x] Testler: sahte ComfyUI ile uçtan uca 12 test (`studio-mcp/tests`)
+- [ ] **Colab'da canlı doğrulama:** gerçek GPU'da bir video ve bir görsel işi (Faz 4 notebook'u ile)
+- [ ] Qwen 2.1 Turbo ön ayarlarının (adım/cfg/shift) ilk gerçek çıktılara göre ayarlanması
 
 ## Faz 4 — Colab notebook ve senkron `[ ]`
 Bitti sayılır: yeni bir Colab oturumu tek "Hepsini çalıştır" ile güncel kod + doğrulanmış modellerle ayağa kalkar.
 - [ ] Hücre 1: Drive bağla, GitHub'dan `git fetch`, yerel commit ↔ uzak commit karşılaştır, gerekirse güncelle
-- [ ] `models/manifest.json`: model dosyaları + sha256; eksik/bozuksa indir
+- [ ] `models/manifest.json`: model dosyaları + sha256; eksik/bozuksa **Drive'a** indir, ComfyUI'ye bağla (K-23: bilgisayara model kurulmaz)
 - [ ] Hücre 2: ortam kurulumu (sabit sürümler, önbellek Drive'da)
 - [ ] Hücre 3: sunucuyu başlat, adresi ve durumu yazdır
 - [ ] Oturum düşerse kaldığı işleri raporlama

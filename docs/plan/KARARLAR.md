@@ -23,3 +23,7 @@ Her karar: tarih, ne seçildi, neden. Bir karar değişirse eskisi silinmez, "ye
 | K-17 | 2026-11-03 | Resmi `kokoro` paketi (PyTorch, CPU) kullanılır; `kokoro-onnx` değil | Kelime zamanlarını yalnızca resmi paket veriyor; altyazı senkronu Whisper'sız olur |
 | K-18 | 2026-11-03 | Seslendirme bağımlılıkları ayrı `requirements-tts.txt` (~1 GB), `setup.ps1 -Ses` ile isteğe bağlı | Disk dolu (%96); temel kurulum hafif kalsın |
 | K-19 | 2026-11-03 | Spec'te `voiceover.text` verilince ses ve altyazı render sırasında üretilir | Tek dosyadan seslendirmeli video; ayrı ses/altyazı adımı gerekmez |
+| K-20 | 2026-11-03 | Studio MCP her model için Python motoru kullanır; MiniMax motoru OzzyVision-Lab'dan (`VideoAi`) taşındı, eski proje olduğu gibi kalır | MiniMax grafiği referans sayısına göre düğüm değiştiriyor; sabit bağlama dosyası bunu ifade edemiyor. Çalışan mantık yeniden icat edilmedi |
+| K-21 | 2026-11-03 | Çıktı dosyaları jetondan türetilen HMAC imzalı bağlantıyla sunulur | Mevcut istemci başlıksız indirir; dosyalar yine de korunur |
+| K-22 | 2026-11-03 | MiniMax'ta negatif prompt etkisiz kabul edilir (CFG 1.0, BasicGuider) | Daha önceki "negatif prompt zayıf" gözlemi bundan; istenmeyen şeyler prompt içinde tarif edilmeli |
+| K-23 | 2026-11-03 | Üretim modelleri (MiniMax H3, Qwen Image, ComfyUI ağırlıkları) yalnızca Drive'da durur; bilgisayara kurulmaz. Colab bunları Drive'dan ComfyUI'ye bağlar | Kullanıcı isteği; C: diski dolu. Bilgisayarda yalnızca küçük yerel modeller kalır: Kokoro, Piper, Whisper |
