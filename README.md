@@ -205,6 +205,33 @@ Birlikte çalışacağınız ajan (bu sohbette Codex) bu bağlamı ve uygulamay�
 
 Günlük taslak takvim CSV'ye, üretim istemleri ve açıklamalar `workspace/apps/UYGULAMA/jobs/*.json` dosyalarına yazılır. Bu şablon tabanlı ilk taslaktır. Ajan/operatör üretimden önce istemleri, CTA ve açıklamaları düzenleyebilir. Aynı plan tekrar oluşturulunca mevcut işler korunur. Yeni planlar eskileri silmez; `status` ile kuyruğu inceleyin. Takvim tarihi yayın planıdır, video üretimini o tarihe kadar ertelemez.
 
+## Remotion (şablon video ve görsel post)
+
+`remotion/` bir Remotion 4 projesidir (sürümler sabit, `setup.ps1` içinde `npm ci` ile kurulur). Render yerelde, GPU'suz yapılır; ilk render Remotion'ın headless Chrome'unu indirir.
+
+| Kompozisyon | Çıktı | Ne için |
+|---|---|---|
+| `AdVideo` | 1080×1920 MP4 | AI klipleri + geçiş + pop/hormozi altyazı + üst metin kancası + bitiş kartı (FFmpeg hattıyla aynı görünüm) |
+| `TemplatePromo` | 1080×1920 MP4 | AI'sız tanıtım: kinetik başlıklar, telefon çerçevesinde ekran görüntüsü/kayıt, seslendirme, bitiş kartı |
+| `PostStill` | 1080×1350 PNG | Tek görsel post: yazısız AI görseli + başlık, metin, CTA, ikon, rozetler |
+| `Carousel` | slayt başına PNG | Instagram carousel: `01.png`, `02.png` …, sayfa göstergesi ve "kaydır" etiketi |
+
+```powershell
+.\run.ps1 --app mentorai remotion examples\remotion\post.json
+.\run.ps1 --app mentorai remotion benim-spec.json --output workspace\out\reklam.mp4
+cd remotion; npm run studio      # şablonları tarayıcıda canlı önizleme
+.\.venv\Scripts\python.exe remotion_smoke.py   # dört kompozisyonu sentetik görüntüyle dener
+```
+
+Spec dosyası `{"composition", "props", "output"}` biçimindedir; örnekler `examples/remotion/` altında. Kurallar:
+
+- Göreli medya yolları spec dosyasının klasörüne, bulunamazsa proje köküne göre çözülür. URL'ler olduğu gibi geçer.
+- Başlık ve metinlerde `*kelime*` vurgu rengiyle yazılır (birden fazla kelime de olur: `*7 days*`).
+- Spec'te verilmeyenler ayarlardan gelir: tema (`theme`), bitiş kartı (`end_card`: ikon, App Store/Google Play rozetleri kenar boşluğu kırpılmış olarak, `cta.text`, uygulama adı), geçiş (`edit`), altyazı dili (`whisper.language`), CRF/preset/ses bit hızı (`video`). Bitiş kartını kapatmak için `"endCard": null`.
+- `AdVideo` klip süresi verilmezse dosyadan okunur. Video çıktıları FFmpeg ile -14 LUFS'a normalize edilir.
+- Altyazı kelimeleri `{"text", "start", "end"}` (saniye). Whisper/`align_script` çıktısını dönüştürmek için `render.words_from_segments`.
+- Uygulamanın renkleri `app.json` içinde: `"config": {"theme": {"primary": "#FE2C55", "highlight": "#FFE500", "background": "#0B0B12", "backgroundAlt": "#2A1640"}}`.
+
 ## MCP bağlantısı
 
 `config.json` yerel bağlantı bilgilerini içerir ve Git dışında tutulur. Desteklenen bağlantılar: stdio ve Streamable HTTP. `mcp.command`/`args` veya `mcp.transport=http` ve `mcp.url` alanlarını doldurun. HTTP bearer anahtarı dosya yerine PowerShell ortam değişkeninden alınabilir:
