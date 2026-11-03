@@ -53,7 +53,7 @@ export const Captions: React.FC<{captions: CaptionsProps; theme: Theme}> = ({cap
     <AbsoluteFill style={{justifyContent: 'flex-end', alignItems: 'center', paddingBottom: captions.bottom ?? 640}}>
       <div style={{
         display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: look.plain ? '0 16px' : '0 22px',
-        maxWidth: 900, transform: `scale(${groupScale})`, opacity: look.plain ? 1 : interpolate(enter, [0, 1], [0.4, 1]),
+        maxWidth: 960, transform: `scale(${groupScale})`, opacity: look.plain ? 1 : interpolate(enter, [0, 1], [0.4, 1]),
         padding: look.box ? '14px 30px' : 0, borderRadius: 22,
         background: look.box ? 'rgba(0,0,0,.85)' : look.plain ? 'rgba(0,0,0,.5)' : 'transparent',
       }}>

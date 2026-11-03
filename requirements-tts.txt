@@ -1,0 +1,10 @@
+# Yerel seslendirme (Faz 2): Kokoro-82M (İngilizce, CPU) ve Piper (Türkçe, varsayılan kapalı).
+# Kurulum: .\.venv\Scripts\python.exe -m pip install -r requirements-tts.txt
+kokoro==0.9.4
+misaki[en]==0.9.4
+piper-tts==1.8.0
+torch==2.14.1
+transformers==5.20.2
+spacy==3.8.16
+# misaki'nin İngilizce ayrıştırıcısı; yoksa ilk çalıştırmada kendisi indirmeye çalışır.
+en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl

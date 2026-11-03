@@ -1,3 +1,5 @@
+# -Ses: yerel seslendirmeyi de kurar (Kokoro + Piper, ~1 GB; requirements-tts.txt).
+param([switch]$Ses)
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
 $env:PYTHONUTF8 = '1'
@@ -8,6 +10,10 @@ python -m venv .venv
 if ($LASTEXITCODE -ne 0) { throw 'Python sanal ortam kurulamadı.' }
 & .\.venv\Scripts\python.exe -m pip install -r requirements.lock.txt
 if ($LASTEXITCODE -ne 0) { throw 'Bağımlılıklar kurulamadı.' }
+if ($Ses) {
+    & .\.venv\Scripts\python.exe -m pip install -r requirements-tts.txt
+    if ($LASTEXITCODE -ne 0) { throw 'Seslendirme bağımlılıkları kurulamadı.' }
+}
 if (Get-Command node -ErrorAction SilentlyContinue) {
     Push-Location remotion
     npm ci --no-audit --no-fund

@@ -95,9 +95,43 @@ def store_badges(cfg, folder):
     return out
 
 
+def voiceover(props, cfg, folder):
+    """{"voiceover": {"text": …}} → local TTS WAV; its word timings become the captions (unless the spec
+    turns captions off with null). "fitToVoiceover": true stretches TemplatePromo scenes to the speech."""
+    vo = props.get('voiceover')
+    if not isinstance(vo, dict) or not vo.get('text') or vo.get('src'):
+        return
+    import tts
+    captions = props.get('captions', {})
+    language = vo.get('language') or (captions or {}).get('language')
+    spoken = tts.speak(vo['text'], Path(folder)/'voiceover.wav', cfg, language=language,
+                       voice=vo.get('voice'), speed=vo.get('speed'))
+    props['voiceover'] = {'src': spoken['audio'], 'volume': vo.get('volume', 1)}
+    if captions is not None:
+        props['captions'] = {'style': (cfg.get('subtitles') or {}).get('style', 'pop'), **(captions or {}),
+                             'words': spoken['words']}
+        props['captions'].setdefault('language', language or ('tr' if spoken['engine'] == 'piper' else 'en'))
+    if props.pop('fitToVoiceover', False) and props.get('scenes'):
+        card = props['endCard'] if 'endCard' in props else (cfg.get('end_card') or {}).get('enabled')
+        fit_scenes(props, spoken['duration'] + 0.4, card not in (None, False))
+
+
+def fit_scenes(props, seconds, end_card):
+    """Scale scene durations so the end card starts `seconds` in (transition overlaps included)."""
+    t = props.get('transition') or {'type': 'slide'}
+    overlap = 0 if t.get('type') == 'cut' else t.get('seconds', 0.35)
+    scenes = props['scenes']
+    total = sum(s['duration'] for s in scenes)
+    target = seconds + overlap * (len(scenes) - 1 + (1 if end_card else 0))
+    for s in scenes:
+        s['duration'] = round(s['duration'] * target / total, 3)
+
+
 def with_defaults(composition, props, cfg, base, scratch):
     """Theme, end card, caption language and clip durations from config, unless the spec sets them."""
     props = copy.deepcopy(props)
+    if COMPOSITIONS[composition] == 'video':
+        voiceover(props, cfg, Path(scratch)/'tts')
     for key in OPTIONAL[composition]:
         props.setdefault(key, None)
     if cfg.get('theme') or props.get('theme'):
@@ -115,7 +149,7 @@ def with_defaults(composition, props, cfg, base, scratch):
             if icon and (Path(icon).is_file() or (ROOT/icon).is_file()):
                 defaults['icon'] = str(icon)
             if 'badges' not in card:
-                defaults['badges'] = store_badges(cfg, scratch)
+                defaults['badges'] = store_badges(cfg, Path(scratch)/'badges')
             card = {**{k: v for k, v in defaults.items() if v}, **card}
         props['endCard'] = card or None
         if props.get('captions'):
@@ -163,7 +197,7 @@ def render(composition, props, output, cfg, base=ROOT, quiet=False):
     public = scratch/'public'
     public.mkdir(parents=True)
     try:
-        props = with_defaults(composition, props, cfg, base, scratch/'badges')
+        props = with_defaults(composition, props, cfg, base, scratch)
         staged = stage(props, public, base)
         v = cfg.get('video') or {}
         job = {'composition': composition, 'props': staged, 'output': str(output), 'publicDir': str(public),

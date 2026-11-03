@@ -39,12 +39,12 @@ Bitti sayılır: `remotion/` içinden üç kompozisyon da örnek props ile Pytho
 - [x] Kalite profili: `video.crf`/`preset`/`audio_bitrate`, 30 fps, -14 LUFS (ölçüldü: -14.0)
 - [-] Remotion agent skill'leri: şimdilik gerek görülmedi
 
-## Faz 2 — Yerel ses (Kokoro) `[ ]`
+## Faz 2 — Yerel ses (Kokoro) `[x]`
 Bitti sayılır: bir senaryodan ses + kelime zamanlaması üretilir ve Remotion altyazısı bununla senkron çalışır.
-- [ ] `tts.py`: Kokoro-82M CPU, ses listesi, hız ayarı, WAV çıktısı
-- [ ] Kelime zamanlaması (Kokoro süreleri veya mevcut `align_script` ile Whisper hizalaması)
-- [ ] Piper `tr_TR` ses desteği kurulu ve test edilmiş, ama varsayılan kapalı (K-9)
-- [ ] Fon müziği + sidechain Remotion tarafında
+- [x] `tts.py` + `pipeline.py seslendir`: Kokoro-82M CPU, ses listesi, hız, okunuş sözlüğü (`pronounce`), WAV + `.words.json`
+- [x] Kelime zamanlaması: Kokoro'nun kendi token zamanları; Piper için Whisper + `align_script`
+- [x] Piper `tr_TR` (dfki/fahrettin/fettah) kurulu ve test edildi, varsayılan kapalı (K-9)
+- [x] Fon müziği + konuşmada kısılma Remotion'da (Faz 1, `Music` bileşeni); spec'te `voiceover.text` → ses + senkron altyazı, `fitToVoiceover`
 
 ## Faz 3 — Studio MCP v2 (Colab) `[ ]`
 Bitti sayılır: Colab'da açılan sunucu, OtoReklam'dan video ve görsel işi alıp sonucunu döndürür.
