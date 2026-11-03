@@ -1,0 +1,16 @@
+{
+  "composition": "TemplatePromo",
+  "output": "workspace/remotion-out/promo.mp4",
+  "props": {
+    "scenes": [
+      {"duration": 2.6, "kicker": "New", "title": "Your week in *one* score"},
+      {"duration": 3.2, "title": "Write one line", "body": "We find the *pattern* for you.",
+       "media": {"src": "screens/home.png", "device": "phone"}},
+      {"duration": 2.6, "title": "See it in *7 days*"}
+    ],
+    "transition": {"type": "slide", "seconds": 0.35},
+    "voiceover": {"src": "audio/voiceover.wav"},
+    "captions": {"style": "box", "language": "en", "words": []},
+    "endCard": {}
+  }
+}

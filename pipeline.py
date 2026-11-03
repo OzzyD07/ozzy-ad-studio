@@ -814,6 +814,9 @@ def main():
     a.add_argument('--start', default=datetime.now(timezone(timedelta(hours=3))).date().isoformat())
     a.add_argument('--days', type=int, default=7)
     a = sub.add_parser('lint'); a.add_argument('--product')
+    a = sub.add_parser('remotion', help='Remotion ile video/görsel üretir (AdVideo, TemplatePromo, PostStill, Carousel)')
+    a.add_argument('spec', help='JSON: {"composition", "props", "output"}; örnekler examples/remotion/')
+    a.add_argument('--output', help='Spec içindeki çıktı yolunun yerine')
     for name in ['render', 'process', 'edit']:
         a = sub.add_parser(name)
         if name == 'edit':
@@ -850,8 +853,8 @@ def main():
         return
     if args.cmd in ('run', 'status') and args.app == 'all':
         targets = [open_app(cfg, slug) for slug in apps(cfg)]
-    elif args.cmd in ('doctor', 'mcp-tools') or (args.cmd in ('process', 'edit') and not args.app):
-        targets = [(Path(cfg['workspace']), cfg)]  # No app needed; process/edit take --app for its icon.
+    elif args.cmd in ('doctor', 'mcp-tools') or (args.cmd in ('process', 'edit', 'remotion') and not args.app):
+        targets = [(Path(cfg['workspace']), cfg)]  # No app needed; process/edit/remotion take --app for its icon.
     else:
         targets = [open_app(cfg, args.app)]
     if args.cmd == 'run':
@@ -919,6 +922,10 @@ def main():
         strategy.build(read(args.product), read(args.research), args.start, args.days, ws)
     elif args.cmd == 'lint':
         lint(args.product, ws)
+    elif args.cmd == 'remotion':
+        import render
+        for path in render.render_spec(args.spec, cfg, args.output):
+            print(path)
     elif args.cmd in ('process', 'edit'):
         from media import assemble, finish
         extras = dict(hook_text=args.hook_text, music=args.music,

@@ -1,0 +1,15 @@
+{
+  "composition": "PostStill",
+  "output": "workspace/remotion-out/post.png",
+  "props": {
+    "width": 1080,
+    "height": 1350,
+    "background": null,
+    "layout": "center",
+    "kicker": "Tip",
+    "title": "Find *calm* in five minutes a day",
+    "body": "One line every night. The pattern shows up in a week.",
+    "cta": "Try free",
+    "badges": ["../../assets/badges/app-store.png", "../../assets/badges/google-play.png"]
+  }
+}

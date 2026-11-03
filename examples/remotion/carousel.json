@@ -1,0 +1,13 @@
+{
+  "composition": "Carousel",
+  "output": "workspace/remotion-out/carousel",
+  "props": {
+    "swipeLabel": "SWIPE →",
+    "slides": [
+      {"title": "3 signs you need a *reset*", "layout": "center"},
+      {"kicker": "1", "title": "Every day feels the *same*", "background": "images/slide2.jpg"},
+      {"kicker": "2", "title": "You forget what made you *happy*", "background": "images/slide3.jpg"},
+      {"title": "Start with *one line* tonight", "cta": "Try free"}
+    ]
+  }
+}

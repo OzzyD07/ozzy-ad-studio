@@ -26,17 +26,18 @@ Akışın kuralları: [AKIS.md](AKIS.md). Alınan kararlar: [KARARLAR.md](KARARL
 - [x] Kampanya verisi (`workspace/`) repodan ve geçmişten çıkarıldı (K-13)
 - [x] GitHub: `OzzyD07/ozzy-ad-studio` `origin` olarak bağlandı ve push edildi
 
-## Faz 1 — Remotion kurulumu `[ ]`
+## Faz 1 — Remotion kurulumu `[x]`
 Bitti sayılır: `remotion/` içinden üç kompozisyon da örnek props ile Python'dan render alınır ve çıktılar incelenir.
 - [x] Remotion lisansı: ücretsiz kullanım (K-12)
-- [ ] `remotion/` TypeScript projesi (sabit sürümler, `npm ci` ile kurulabilir)
-- [ ] Marka teması: renkler, `assets/fonts`, uygulama ikonu, `assets/badges` → ortak `theme` props
-- [ ] `AdVideo`: AI klipleri + geçişler + pop/hormozi altyazı + hook metni + end card (`media.py` ile aynı görünüm)
-- [ ] `TemplatePromo`: AI'sız video (ekran görüntüsü / kayıt + kinetik tipografi + seslendirme)
-- [ ] `PostStill` ve `Carousel`: `renderStill` ile 1080×1350 / 1080×1920 PNG
-- [ ] `render.py`: props JSON yazar, `npx remotion render|still` çağırır, çıktıyı doğrular
-- [ ] Kalite profili: CRF/bitrate, 30 fps, -14 LUFS (mevcut ayarlarla aynı)
-- [ ] Remotion agent skill'leri (isteğe bağlı)
+- [x] Doğrulama: `remotion_smoke.py` dört kompozisyonu render eder; kareler incelendi; `tests/test_render.py`
+- [x] `remotion/` TypeScript projesi (Remotion 4.0.536, React 18.3.1; `npm ci`, `setup.ps1` kurar)
+- [x] Marka teması: `theme` props + `config.theme`/`app.json`; Montserrat/Inter (latin-ext); ikon ve kırpılmış rozetler ayarlardan
+- [x] `AdVideo`: AI klipleri + geçişler + 7 altyazı stili + hook metni + end card (`media.py` ile aynı görünüm)
+- [x] `TemplatePromo`: AI'sız video (ekran görüntüsü / kayıt + kinetik tipografi + seslendirme)
+- [x] `PostStill` ve `Carousel`: `renderStill` ile PNG (boyut props ile)
+- [x] `render.py` + `pipeline.py remotion SPEC`: varsayılanları doldurur, medyayı hazırlar, Node API ile tek bundle'dan render eder
+- [x] Kalite profili: `video.crf`/`preset`/`audio_bitrate`, 30 fps, -14 LUFS (ölçüldü: -14.0)
+- [-] Remotion agent skill'leri: şimdilik gerek görülmedi
 
 ## Faz 2 — Yerel ses (Kokoro) `[ ]`
 Bitti sayılır: bir senaryodan ses + kelime zamanlaması üretilir ve Remotion altyazısı bununla senkron çalışır.

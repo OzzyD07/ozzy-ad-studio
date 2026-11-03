@@ -1,0 +1,26 @@
+{
+  "composition": "AdVideo",
+  "output": "workspace/remotion-out/ad.mp4",
+  "props": {
+    "clips": [
+      {"src": "clips/hook.mp4"},
+      {"src": "clips/body.mp4", "trimBefore": 0.5, "duration": 7},
+      {"src": "clips/demo.mov", "fit": "contain-blur", "muted": true}
+    ],
+    "transition": {"type": "fade", "seconds": 0.35},
+    "music": {"src": "music/bed.mp3", "volume": 0.22, "duck": 0.35},
+    "captions": {
+      "style": "pop",
+      "language": "en",
+      "emphasis": ["MentorAi"],
+      "words": [
+        {"text": "Your", "start": 0.4, "end": 0.7},
+        {"text": "week", "start": 0.76, "end": 1.05},
+        {"text": "feels", "start": 1.12, "end": 1.4},
+        {"text": "blurry?", "start": 1.48, "end": 1.9}
+      ]
+    },
+    "hookText": "POV: every day feels the same",
+    "endCard": {"headline": "Try it free"}
+  }
+}
