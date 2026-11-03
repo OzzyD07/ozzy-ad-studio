@@ -64,13 +64,20 @@ class EngineTest(unittest.TestCase):
         with self.assertRaises(EngineError):
             MiniMaxH3().validate({'images': ['x'] * 10})
 
-    def test_qwen_picks_turbo_and_blocks_text(self):
+    def test_qwen_turbo_graph_quality_and_no_text(self):
         wf, meta = QwenImage().build({'prompt': 'calm desk', 'aspect_ratio': '4:5', 'count': 2}, {}, MODELS)
-        self.assertEqual(wf['1']['inputs']['unet_name'], 'qwen_image_2.1_turbo_fp8_e4m3fn.safetensors')
-        self.assertEqual((wf['7']['inputs']['width'], wf['7']['inputs']['height'], wf['7']['inputs']['batch_size']), (1184, 1472, 2))
-        self.assertIn('watermark', wf['6']['inputs']['text'])
-        wf, _ = QwenImage().build({'prompt': 'poster', 'text_ok': True}, {}, MODELS)
-        self.assertEqual(wf['6']['inputs']['text'], '')
+        self.assertEqual(wf['1']['inputs']['unet_name'], 'qwen_image_2.1_turbo_bf16.safetensors')
+        self.assertEqual(wf['2']['inputs']['clip_name'], 'qwen3vl_8b_bf16.safetensors')
+        latent = wf['6']['inputs']
+        self.assertEqual(latent['batch_size'], 2)
+        self.assertTrue(latent['width'] % 32 == 0 and latent['height'] % 32 == 0)
+        self.assertAlmostEqual(latent['width'] * latent['height'] / 1024**2, 4.0, delta=.1)  # max = native 2K
+        self.assertAlmostEqual(latent['width'] / latent['height'], .8, delta=.01)
+        self.assertIn('no text', wf['5']['inputs']['prompt'])  # cfg 1: negative is skipped, so ask in the prompt
+        self.assertEqual(wf['10']['inputs']['cfg'], 1.0)
+        wf, meta = QwenImage().build({'prompt': 'poster', 'text_ok': True, 'quality': 'draft'}, {}, MODELS)
+        self.assertEqual(wf['5']['inputs']['prompt'], 'poster')
+        self.assertEqual(meta['megapixels'], 1.0)
 
 
 def free_port():
