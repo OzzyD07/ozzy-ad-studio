@@ -23,7 +23,7 @@ Akışın kuralları: [AKIS.md](AKIS.md). Alınan kararlar: [KARARLAR.md](KARARL
 - [x] `.gitignore` medya ve yerel ayarları dışlayacak şekilde yenilendi
 - [x] Planlama akışı kuruldu (`docs/plan/`, `CLAUDE.md`)
 - [x] `git init` ve ilk commit
-- [ ] GitHub'da özel repo açılıp `origin` olarak bağlanacak → **kullanıcı**
+- [ ] Public repo içeriği netleşecek (S7), ardından GitHub'da `ozzy-ad-studio` açılıp `origin` olarak bağlanacak
 
 ## Faz 1 — Remotion kurulumu `[ ]`
 Bitti sayılır: `remotion/` içinden üç kompozisyon da örnek props ile Python'dan render alınır ve çıktılar incelenir.
@@ -41,17 +41,20 @@ Bitti sayılır: `remotion/` içinden üç kompozisyon da örnek props ile Pytho
 Bitti sayılır: bir senaryodan ses + kelime zamanlaması üretilir ve Remotion altyazısı bununla senkron çalışır.
 - [ ] `tts.py`: Kokoro-82M CPU, ses listesi, hız ayarı, WAV çıktısı
 - [ ] Kelime zamanlaması (Kokoro süreleri veya mevcut `align_script` ile Whisper hizalaması)
-- [ ] Türkçe gerekiyorsa Piper `tr_TR` ses desteği
+- [ ] Piper `tr_TR` ses desteği kurulu ve test edilmiş, ama varsayılan kapalı (K-9)
 - [ ] Fon müziği + sidechain Remotion tarafında
 
 ## Faz 3 — Studio MCP v2 (Colab) `[ ]`
 Bitti sayılır: Colab'da açılan sunucu, OtoReklam'dan video ve görsel işi alıp sonucunu döndürür.
 - [ ] Araç seti: `generate_video`, `generate_image`, `upload_asset`, `get_job`, `list_jobs`, `cancel_job`, `server_status`
 - [ ] Asenkron iş modeli: submit → `job_id` → durum → sonuç URL'si
-- [ ] Model yöneticisi: istek tipine göre MiniMax / Qwen yükle-boşalt (VRAM)
+- [ ] Sunucu kodu bu repoda: `studio-mcp/` (K-8)
+- [ ] Model yöneticisi, toplu çalışma (K-10): VRAM'de tek model; kuyruk tipe göre gruplanır, önce tüm video işleri,
+      sonra VRAM temizlenip Qwen yüklenir ve tüm görseller üretilir. Aynı tip işler arasında model yeniden yüklenmez.
+- [ ] Kuyruk görünürlüğü: `get_job` sıradaki konumu ve "model değişimi bekleniyor" durumunu döndürür
 - [ ] "Max kalite" ön ayarı: yüksek step, sabit seed seçeneği, `ref_image_size=max`, referans sadakati ayarları
 - [ ] Qwen için varsayılan "yazısız" negatif prompt (metin/logo Remotion'da eklenir)
-- [ ] Erişim: sabit tünel adresi + bearer token (Colab Secrets)
+- [ ] Erişim: sabit ngrok domain'i + **zorunlu** bearer token (Colab Secrets); adres repoya yazılmaz (K-11)
 - [ ] Mevcut `generate_omni_video` / `get_job` uyumluluğu (geçiş süresince)
 
 ## Faz 4 — Colab notebook ve senkron `[ ]`
@@ -84,8 +87,9 @@ Bitti sayılır: 14 günlük takvim, GPU bütçesine uygun format karışımıyl
 | # | Soru | Neden önemli | Durum |
 |---|---|---|---|
 | S1 | Remotion'ı kullanacak şirket 3 çalışandan büyük mü? | Büyükse ücretli company license gerekir | açık |
-| S2 | GitHub repo adı ve özel mi olacak? | Faz 4'te Colab buradan çekecek | açık |
-| S3 | Studio MCP kodu bu repoda mı (`studio-mcp/`) yoksa ayrı repoda mı? | Colab'ın klonlayacağı içerik | açık |
-| S4 | Türkçe seslendirme gerekecek mi? | Kokoro Türkçe desteklemiyor | açık |
-| S5 | Colab G4 VRAM'i iki modeli aynı anda tutmaya yetiyor mu? | Model yöneticisi tasarımı | açık |
-| S6 | Sabit tünel (ngrok static domain / Cloudflare Tunnel) var mı? | Her oturumda `mcp.url` değişmesin | açık |
+| S2 | GitHub repo adı ve özel mi olacak? | Faz 4'te Colab buradan çekecek | kapandı: "Ozzy Ad Studio" (`ozzy-ad-studio`), public (K-8) |
+| S3 | Studio MCP kodu bu repoda mı (`studio-mcp/`) yoksa ayrı repoda mı? | Colab'ın klonlayacağı içerik | kapandı: bu repoda (K-8) |
+| S4 | Türkçe seslendirme gerekecek mi? | Kokoro Türkçe desteklemiyor | kapandı: şimdilik hayır, Piper hazır kurulur (K-9) |
+| S5 | Colab G4 VRAM'i iki modeli aynı anda tutmaya yetiyor mu? | Model yöneticisi tasarımı | kapandı: gerek yok, toplu sıralı çalışma (K-10) |
+| S6 | Sabit tünel (ngrok static domain / Cloudflare Tunnel) var mı? | Her oturumda `mcp.url` değişmesin | kapandı: sabit ngrok domain'i var (K-11) |
+| S7 | Public repoda kampanya verisi (`workspace/apps/`) ve iş kayıtları yer alsın mı? | Promptlar, araştırma ve MCP adresi herkese açılır | açık |
