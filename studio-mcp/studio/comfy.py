@@ -129,6 +129,14 @@ class Comfy:
         """Unload every model from VRAM (used when the queue switches between video and image models)."""
         self._json('/free', {'unload_models': True, 'free_memory': True})
 
+    def clear_queue(self):
+        """Drop pending prompts and stop the running one (after a server restart they belong to no job)."""
+        try:
+            self._json('/queue', {'clear': True})
+        except ComfyError:
+            pass
+        self.interrupt()
+
     def interrupt(self):
         try:
             self._request('/interrupt', b'', method='POST')

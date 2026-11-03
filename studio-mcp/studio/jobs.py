@@ -47,11 +47,16 @@ class Studio:
         self.current = None
         self.durations = {}  # engine -> recent run seconds, for ETA
         self.stop = False
+        interrupted = False
         for path in sorted((self.s.home/'jobs').glob('*.json')):
             job = json.loads(path.read_text(encoding='utf-8'))
             if job['status'] == 'running':  # Interrupted by a restart: run it again.
                 job.update(status='queued', note='sunucu yeniden başladı, iş tekrar sırada')
+                interrupted = True
             self.jobs[job['id']] = job
+        if interrupted:
+            # The old prompt is still on ComfyUI's GPU; drop it so the re-queued job does not render twice.
+            self.comfy.clear_queue()
         self.worker = threading.Thread(target=self._loop, name='studio-gpu', daemon=True)
 
     # ---------- store ----------

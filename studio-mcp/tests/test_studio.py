@@ -231,6 +231,7 @@ class ServerTest(unittest.TestCase):
         self.studio._save(job)
         _, again, _ = build(self.settings, Comfy(self.fake.url), start_worker=False)
         self.assertEqual(again.jobs[job_id]['status'], 'queued')
+        self.assertIn('clear', self.fake.events)  # the orphaned ComfyUI prompt is dropped
 
     def test_status_and_models(self):
         status = self.call('server_status')

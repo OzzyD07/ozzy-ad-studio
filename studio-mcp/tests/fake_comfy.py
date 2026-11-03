@@ -92,6 +92,9 @@ class FakeComfy:
                 if self.path == '/free':
                     fake.events.append('free')
                     return self.send(200, b'', 'text/plain')
+                if self.path == '/queue':
+                    fake.events.append('clear')
+                    return self.send(200, b'', 'text/plain')
                 if self.path == '/interrupt':
                     return self.send(200, b'', 'text/plain')
                 if self.path == '/upload/image':
