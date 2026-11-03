@@ -23,11 +23,12 @@ Akışın kuralları: [AKIS.md](AKIS.md). Alınan kararlar: [KARARLAR.md](KARARL
 - [x] `.gitignore` medya ve yerel ayarları dışlayacak şekilde yenilendi
 - [x] Planlama akışı kuruldu (`docs/plan/`, `CLAUDE.md`)
 - [x] `git init` ve ilk commit
-- [ ] Public repo içeriği netleşecek (S7), ardından GitHub'da `ozzy-ad-studio` açılıp `origin` olarak bağlanacak
+- [x] Kampanya verisi (`workspace/`) repodan ve geçmişten çıkarıldı (K-13)
+- [x] GitHub: `OzzyD07/ozzy-ad-studio` `origin` olarak bağlandı ve push edildi
 
 ## Faz 1 — Remotion kurulumu `[ ]`
 Bitti sayılır: `remotion/` içinden üç kompozisyon da örnek props ile Python'dan render alınır ve çıktılar incelenir.
-- [ ] Remotion lisansının bu kullanım için ücretsiz olduğu doğrulandı (bkz. açık sorular)
+- [x] Remotion lisansı: ücretsiz kullanım (K-12)
 - [ ] `remotion/` TypeScript projesi (sabit sürümler, `npm ci` ile kurulabilir)
 - [ ] Marka teması: renkler, `assets/fonts`, uygulama ikonu, `assets/badges` → ortak `theme` props
 - [ ] `AdVideo`: AI klipleri + geçişler + pop/hormozi altyazı + hook metni + end card (`media.py` ile aynı görünüm)
@@ -64,6 +65,7 @@ Bitti sayılır: yeni bir Colab oturumu tek "Hepsini çalıştır" ile güncel k
 - [ ] Hücre 2: ortam kurulumu (sabit sürümler, önbellek Drive'da)
 - [ ] Hücre 3: sunucuyu başlat, adresi ve durumu yazdır
 - [ ] Oturum düşerse kaldığı işleri raporlama
+- [ ] Yerel `workspace/apps` için Drive yedeği (K-13)
 
 ## Faz 5 — OtoReklam entegrasyonu `[ ]`
 Bitti sayılır: tek plandan dört içerik tipi de üretilip teslim klasörüne düşer.
@@ -86,10 +88,10 @@ Bitti sayılır: 14 günlük takvim, GPU bütçesine uygun format karışımıyl
 ## Açık sorular
 | # | Soru | Neden önemli | Durum |
 |---|---|---|---|
-| S1 | Remotion'ı kullanacak şirket 3 çalışandan büyük mü? | Büyükse ücretli company license gerekir | açık |
+| S1 | Remotion'ı kullanacak şirket 3 çalışandan büyük mü? | Büyükse ücretli company license gerekir | kapandı: tek kişi, ücretsiz lisans (K-12) |
 | S2 | GitHub repo adı ve özel mi olacak? | Faz 4'te Colab buradan çekecek | kapandı: "Ozzy Ad Studio" (`ozzy-ad-studio`), public (K-8) |
 | S3 | Studio MCP kodu bu repoda mı (`studio-mcp/`) yoksa ayrı repoda mı? | Colab'ın klonlayacağı içerik | kapandı: bu repoda (K-8) |
 | S4 | Türkçe seslendirme gerekecek mi? | Kokoro Türkçe desteklemiyor | kapandı: şimdilik hayır, Piper hazır kurulur (K-9) |
 | S5 | Colab G4 VRAM'i iki modeli aynı anda tutmaya yetiyor mu? | Model yöneticisi tasarımı | kapandı: gerek yok, toplu sıralı çalışma (K-10) |
 | S6 | Sabit tünel (ngrok static domain / Cloudflare Tunnel) var mı? | Her oturumda `mcp.url` değişmesin | kapandı: sabit ngrok domain'i var (K-11) |
-| S7 | Public repoda kampanya verisi (`workspace/apps/`) ve iş kayıtları yer alsın mı? | Promptlar, araştırma ve MCP adresi herkese açılır | açık |
+| S7 | Public repoda kampanya verisi (`workspace/apps/`) ve iş kayıtları yer alsın mı? | Promptlar, araştırma ve MCP adresi herkese açılır | kapandı: hayır, yerelde + Drive yedeği (K-13) |

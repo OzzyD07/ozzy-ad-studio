@@ -15,3 +15,5 @@ Her karar: tarih, ne seçildi, neden. Bir karar değişirse eskisi silinmez, "ye
 | K-9 | 2026-11-03 | Türkçe ses için Piper kurulur ama varsayılan kapalı; aktif ses Kokoro (İngilizce) | Şimdilik Türkçe yok; ihtiyaç olunca hazır olsun |
 | K-10 | 2026-11-03 | VRAM'de aynı anda tek model; işler tipe göre toplu: önce tüm videolar, sonra VRAM temizlenip tüm görseller | G4 iki modeli birlikte tutamayabilir; her işte yeniden yükleme süresi harcanmaz |
 | K-11 | 2026-11-03 | MCP sabit ngrok domain'i üzerinden yayınlanır; adres yalnızca `config.json`'da durur, token zorunlu | Repo public olduğu için adres ve erişim korunmalı |
+| K-12 | 2026-11-03 | Remotion ücretsiz lisansla kullanılır | Kullanıcı tek kişi, şirket yok; ücretsiz lisans kapsamında |
+| K-13 | 2026-11-03 | `workspace/` (kampanya verisi, iş kayıtları, çıktılar) git'e girmez, geçmişten de silindi; yedeği Drive'a alınır | Public repoda promptlar, araştırma ve MCP adresi görünmesin |
