@@ -247,6 +247,18 @@ Spec dosyası `{"composition", "props", "output"}` biçimindedir; örnekler `exa
 
 `.\run.ps1 --app mentorai run` her geçişte işleri bir adım ilerletir: görseli gönderir, sonraki geçişte indirip render eder. Görsel ayarları `config.json → mcp`: `image_tool` (`generate_image`), `image_arguments`, `image_result_path` (`job.output_image`).
 
+## Günde 2 gönderi (Faz 6)
+
+```powershell
+.\run.ps1 --app mentorai strategy --days 7 --per-day 2   # brif: her gün/slot için format önerisi + yazım rehberi
+.\run.ps1 --app mentorai plan --days 7 --per-day 2       # senaryolar ikişer ikişer: sabah + akşam
+.\run.ps1 --app mentorai run                              # her geçiş bir adım ilerletir
+.\run.ps1 --app mentorai pano                             # gün + slot kartları; post ve carousel görsel olarak
+.\run.ps1 --app mentorai teslim                           # YAYINA-HAZIR/NN_tarih_slot/
+```
+
+Ayarlar `app.json → "config": {"calendar": …}` (yoksa varsayılanlar): `per_day`, `slots` (ad, saat, formatlar; saatler `publish.timezone`'da), `budget` (`ai_videos_per_week`, `images_per_day`), `gpu` (süre ve işlem birimi tahminleri). `plan` dosyası "GPU bütçesi" bölümünde video/görsel sayısını, tahmini Colab süresini ve işlem birimini yazar; bütçe aşılırsa uyarır. Senaryoda `"slot"` verilirse o slot kullanılır. Görsel post ve carousel için açıklamalar Instagram gönderisi ve TikTok foto olarak yazılır (YouTube Shorts yok).
+
 ## Yerel seslendirme (Kokoro, Piper)
 
 Seslendirme bilgisayarda, CPU ile yapılır. Kurulum ayrı ve isteğe bağlıdır (~1 GB): `.\setup.ps1 -Ses` veya `pip install -r requirements-tts.txt`. Modeller ilk kullanımda `workspace/models` altına iner (Kokoro ~330 MB).

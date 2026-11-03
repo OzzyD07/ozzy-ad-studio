@@ -99,7 +99,12 @@ class TakvimTests(unittest.TestCase):
         self.assertEqual(folders['03_2026-11-06_sabah']['files'], ['01.png', '02.png', '03.png'])
         self.assertEqual(folders['02_2026-11-05_aksam']['publish_local'], '2026-11-05T19:00')
         self.assertEqual(folders['01_2026-11-05_sabah']['publish_local'], '2026-11-05T09:00')
+        sabah, aksam = ws/'teslim'/'01_2026-11-05_sabah', ws/'teslim'/'02_2026-11-05_aksam'
+        self.assertFalse((sabah/'aciklama-youtube.txt').exists())  # no Shorts copy for a still post
+        self.assertTrue((aksam/'aciklama-youtube.txt').exists())
         page = delivery.board(ws, cfg).read_text(encoding='utf-8')
+        self.assertIn('4 gönderi', page)
+        self.assertIn('Instagram gönderi', page)
         self.assertIn('class="post"', page)
         self.assertEqual(page.count('alt="slayt'), 3)
         self.assertIn('Carousel · sabah', page)

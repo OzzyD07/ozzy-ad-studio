@@ -200,6 +200,9 @@ PLATFORMS = {
 }
 
 
+IMAGE_LABELS = {'tiktok': 'TikTok foto', 'instagram': 'Instagram gönderi'}
+
+
 def caption_parts(job):
     text = (job.get('caption') or '').strip()
     lines = [l for l in text.split('\n') if not re.match(r'^(Android|iOS):\s*https?://', l.strip())]
@@ -226,7 +229,12 @@ def platform_captions(job, product):
         **(job.get('captions') or {}),
     }
     out = {}
+    image = job.get('format') in ('image_post', 'carousel')
     for key, (label, limit) in PLATFORMS.items():
+        if image and key == 'youtube':
+            continue  # Shorts is video-only; posts and carousels go to the Instagram feed and TikTok photo mode.
+        if image:
+            label = IMAGE_LABELS.get(key, label)
         text = texts[key]
         warnings = [f'{len(text)} karakter; sınır {limit}.'] if len(text) > limit else []
         if key == 'instagram' and len(tags) > 30:
@@ -545,7 +553,7 @@ textarea {{ width:100%; border:1px solid var(--line); border-radius:8px; backgro
 <body>
 <header>
   <h1>{name} yayın panosu</h1>
-  <div class="muted">{total} gün · oluşturuldu {generated} · teslim klasörü: {delivery}</div>
+  <div class="muted">{total} gönderi · oluşturuldu {generated} · teslim klasörü: {delivery}</div>
   <div class="stats" role="group" aria-label="Filtre">
     <button class="on" data-filter="all">Tümü {total}</button>
     <button data-filter="ready">Yayına hazır {ready}</button>
