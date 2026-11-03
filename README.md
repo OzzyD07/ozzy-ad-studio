@@ -232,6 +232,21 @@ Spec dosyası `{"composition", "props", "output"}` biçimindedir; örnekler `exa
 - Altyazı kelimeleri `{"text", "start", "end"}` (saniye). Whisper/`align_script` çıktısını dönüştürmek için `render.words_from_segments`.
 - Uygulamanın renkleri `app.json` içinde: `"config": {"theme": {"primary": "#FE2C55", "highlight": "#FFE500", "background": "#0B0B12", "backgroundAlt": "#2A1640"}}`.
 
+## İçerik formatları (Faz 5)
+
+`product.json` senaryolarında `"format"` alanı akışı seçer (verilmezse eskisi gibi AI video). Tam örnek: `examples/product.formats.example.json`.
+
+| format | Ne olur | Çıktı (`exports/<iş>/`) |
+|---|---|---|
+| (yok) / `ai_video` | MiniMax video → altyazı, hook, bitiş kartı. `config.json → "render": {"engine": "remotion"}` ile Remotion'da biter | `video.mp4` |
+| `image_post` | `image_prompt` ile Qwen görseli (Studio MCP) → Remotion'da başlık/metin/CTA/ikon | `post.png` |
+| `carousel` | `image_prompt` içeren her slayt için Qwen görseli → Remotion carousel; `"brand": true` slayta uygulama adı/ikon koyar | `01.png`, `02.png` … |
+| `template_video` | GPU yok: Remotion `TemplatePromo` + Kokoro seslendirme (`promo.voiceover.text`) | `video.mp4` |
+
+**Kesitler (`cuts`):** Bir AI klibinden birden çok bitmiş video, ör. `"cuts": [{"name": "video"}, {"name": "kisa", "trim": [0, 6], "hook_text": "POV: …", "caption_style": "hormozi"}]`. Her kesitin kendi kırpması, üst metni ve altyazı stili olur; ek GPU üretimi gerekmez (yalnızca `render.engine = "remotion"`).
+
+`.\run.ps1 --app mentorai run` her geçişte işleri bir adım ilerletir: görseli gönderir, sonraki geçişte indirip render eder. Görsel ayarları `config.json → mcp`: `image_tool` (`generate_image`), `image_arguments`, `image_result_path` (`job.output_image`).
+
 ## Yerel seslendirme (Kokoro, Piper)
 
 Seslendirme bilgisayarda, CPU ile yapılır. Kurulum ayrı ve isteğe bağlıdır (~1 GB): `.\setup.ps1 -Ses` veya `pip install -r requirements-tts.txt`. Modeller ilk kullanımda `workspace/models` altına iner (Kokoro ~330 MB).

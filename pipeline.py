@@ -16,6 +16,7 @@ from contextlib import contextmanager
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
+import formats
 import minimax
 
 ROOT = Path(__file__).resolve().parent
@@ -328,12 +329,18 @@ def plan_scripts(product, findings, start, days, ws):
              'Conceptual vertical ads (MiniMax H3). Review every export before publishing.', '']
     for i in range(days):
         s = product['scripts'][i]
-        for key in ['angle', 'caption'] + ([] if s.get('shots') else ['hook', 'voiceover', 'visual']):
+        video = s.get('format', 'ai_video') == 'ai_video'
+        for key in ['angle', 'caption'] + ([] if s.get('shots') or not video else ['hook', 'voiceover', 'visual']):
             if not s.get(key):
                 raise ValueError(f'Senaryo {i+1} eksik: {key}')
-        if not s.get('shots') and not s['voiceover'].startswith(s['hook']):
+        if not video:
+            problems = formats.validate_script(s, i+1)
+            if problems:
+                raise ValueError('\n'.join(problems))
+        elif not s.get('shots') and not s['voiceover'].startswith(s['hook']):
             raise ValueError(f'Senaryo {i+1}: seslendirme hook ile başlamalı.')
-        issues += minimax.lint_script(s, product, i+1)
+        if video:
+            issues += minimax.lint_script(s, product, i+1)
         day = (start + timedelta(days=i)).isoformat()
         if (day, s['angle']) in existing:
             print(f"{day} — {s['angle']}: iş zaten var, korunuyor.")
@@ -346,6 +353,17 @@ def plan_scripts(product, findings, start, days, ws):
                   'emphasis': s.get('emphasis', []), 'music': s.get('music'),
                   'research': findings[i % len(findings)], 'remote_id': None,
                   'model': product.get('video_model'), 'review_required': True}
+        if s.get('cuts'):
+            common['cuts'] = s['cuts']  # Several finished cuts of the same footage (Remotion).
+        if not video:
+            job = formats.plan_job(s, common, base)
+            jobs.append(job)
+            what = (job['post']['title'] if s['format'] == 'image_post' else
+                    f"{len(job['slides'])} slayt" if s['format'] == 'carousel' else
+                    f"{len(job['promo']['scenes'])} sahne")
+            lines += [f"## {day} — {s['angle']} ({s['format']})", '', f'**İçerik:** {what}', '',
+                      f"**Caption:** {s['caption']}", '', f"**CTA:** {common['cta']} · Job: `{job['id']}`", '']
+            continue
         if not s.get('shots'):
             job = shot_job(product, {**s, 'duration': s.get('duration', 15)}, job_id=base, parent=None,
                            index=1, total=1, language=language, base=ws)
@@ -411,7 +429,7 @@ def plan_scripts(product, findings, start, days, ws):
     with calendar.open('w', encoding='utf-8-sig', newline='') as f:
         writer = csv.DictWriter(f, fieldnames=['id', 'date', 'timezone', 'angle', 'hook', 'caption', 'cta'])
         writer.writeheader()
-        writer.writerows({k:j[k] for k in writer.fieldnames} for j in jobs if j.get('role') != 'shot')
+        writer.writerows({k: j.get(k, '') for k in writer.fieldnames} for j in jobs if j.get('role') != 'shot')
     (ws/'plans'/f'plan-{start}-{language}.md').write_text('\n'.join(lines), encoding='utf-8')
     print(f'{len(jobs)} iş; takvim: {calendar}')
 
@@ -550,6 +568,8 @@ def generate(args, cfg, ws):
     path = job_path(ws, args.id)
     job = read(path)
     mc = cfg['mcp']
+    if formats.fmt(job) != 'ai_video':
+        raise ValueError(f'{formats.fmt(job)} işi run ile ilerletilir.')
     if job.get('role') == 'edit':
         raise ValueError('Bu bir montaj işi: çekimleri üretilir, kendisi render ile birleştirilir.')
     if job['status'] in ['raw_ready', 'done']:
@@ -636,6 +656,10 @@ def render_job(args, cfg, ws):
         assemble_job(job, path, cfg, ws)
     if job['status'] != 'raw_ready':
         raise ValueError('İşin videosu hazır değil; generate veya attach kullanın.')
+    if (cfg.get('render') or {}).get('engine') == 'remotion' and not args.srt:
+        return formats.finish_ai_video(job, path, cfg, ws)  # Remotion finishing; job "cuts" → several files.
+    if job.get('cuts'):
+        raise ValueError('Kesitler (cuts) yalnızca render.engine = "remotion" ile üretilir.')
     output = ws/'exports'/job['id']
     if output.exists():
         raise ValueError('Çıktı zaten var; kesilen işlemin çıktısını kontrol edin: ' + str(output))
@@ -670,6 +694,10 @@ def run_queue(args, cfg, ws):
             job = read(path)
             action = ('montaj: çekimler hazırsa birleştirilir' if job.get('role') == 'edit' and job['status'] == 'planned'
                       else actions.get(job['status'], job['status']))
+            if formats.fmt(job) != 'ai_video':
+                action = {'image_post': 'görsel üretilir, Remotion ile post yapılır',
+                          'carousel': 'slayt görselleri üretilir, Remotion ile carousel yapılır',
+                          'template_video': 'Remotion ile şablon video (GPU yok)'}[formats.fmt(job)]
             note = f" — {job['revision_note']}" if job.get('revision_note') else ''
             print(f"{job['id']}: {action}{note}")
         if not jobs:
@@ -679,6 +707,9 @@ def run_queue(args, cfg, ws):
         job = read(path)
         identity = job['id']
         try:
+            if formats.fmt(job) != 'ai_video':
+                formats.run(job, path, cfg, ws)  # One step: image submit/poll/download, then Remotion.
+                continue
             if job.get('role') == 'edit':
                 if job['status'] != 'raw_ready' and not shots_ready(job, ws):
                     print(identity + ': montaj çekimleri bekliyor.')
@@ -746,7 +777,8 @@ def status(ws):
     for p in sorted((ws/'jobs').glob('*.json')):
         job = read(p)
         role = {'shot': f"çekim → {job.get('parent')}", 'edit': f"montaj ({len(job.get('shots', []))} çekim)"}
-        print(job['id'], job['status'], role.get(job.get('role'), ''))
+        kind = '' if formats.fmt(job) == 'ai_video' else f'[{formats.fmt(job)}]'
+        print(job['id'], job['status'], kind or role.get(job.get('role'), ''))
 
 
 def run_all(args, targets):
