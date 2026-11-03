@@ -88,14 +88,17 @@ def convert(day, clock, source, target):
         return guess
 
 
-def slot(day, cfg):
-    """(target-market label, local publish datetime) or None when the app has no publish rule."""
+def slot(day, cfg, name=None):
+    """(target-market label, local publish datetime) or None when the app has no publish rule.
+    A named slot (two posts a day) uses its own time from the calendar settings, in the same time zone."""
+    import takvim
     rule = (cfg.get('app') or {}).get('publish') or {}
-    if not rule.get('time'):
+    clock = (takvim.slot_time(name, cfg) if name else None) or rule.get('time')
+    if not clock:
         return None
-    source = rule.get('timezone', 'UTC')
+    source = rule.get('timezone', 'Europe/Istanbul')
     target = rule.get('local_timezone', 'Europe/Istanbul')
-    return f"{rule['time']} {rule.get('label', source)}", convert(day, rule['time'], source, target)
+    return f"{clock} {rule.get('label', source)}", convert(day, clock, source, target)
 
 
 def tr_date(value, with_time=False):
@@ -120,32 +123,47 @@ def ad_jobs(ws):
     return jobs
 
 
-def video_of(job):
-    """The finished video of a job, if it exists on disk."""
+def media_of(job):
+    """Finished files that get posted: [video.mp4], [post.png] or the carousel's [01.png, 02.png, …]."""
     export = job.get('export')
     if not export:
-        return None
+        return []
     path = Path(export)
     if path.is_file():
-        return path
-    if path.is_dir():
-        if (path/'video.mp4').is_file():
-            return path/'video.mp4'
-        found = sorted(path.glob('*.mp4'))
-        return found[0] if found else None
-    return None
+        return [path]
+    if not path.is_dir():
+        return []
+    for name in ('video.mp4', 'post.png'):
+        if (path/name).is_file():
+            return [path/name]
+    slides = sorted(path.glob('[0-9][0-9].png'))
+    return slides or sorted(path.glob('*.mp4'))[:1]
 
 
-def days(ws):
-    """date → {'options': [...], 'selected': job or None}, in date order."""
+def video_of(job):
+    """The finished video of a job, if it exists on disk."""
+    found = [m for m in media_of(job) if m.suffix == '.mp4']
+    return found[0] if found else None
+
+
+def slot_key(job):
+    return job['date'] + (f" {job['slot']}" if job.get('slot') else '')
+
+
+def days(ws, cfg=None):
+    """'date[ slot]' → {'date', 'slot', 'options': [...], 'selected': job or None}, in publishing order."""
+    import takvim
+    order = [s['name'] for s in takvim.settings(cfg)['slots']]
     grouped = {}
     for job in ad_jobs(ws):
-        grouped.setdefault(job['date'], []).append(job)
+        grouped.setdefault(slot_key(job), []).append(job)
+    rank = lambda key: (key.split(' ')[0], order.index(key.split(' ', 1)[1]) if ' ' in key and key.split(' ', 1)[1] in order else 99, key)
     result = {}
-    for day in sorted(grouped):
-        options = sorted(grouped[day], key=lambda j: (j.get('variant') or '', j['id']))
-        chosen = [j for j in options if truthy(j.get('selected_for_publication')) and video_of(j)]
-        result[day] = {'options': options, 'selected': chosen[-1] if chosen else None}
+    for key in sorted(grouped, key=rank):
+        options = sorted(grouped[key], key=lambda j: (j.get('variant') or '', j['id']))
+        chosen = [j for j in options if truthy(j.get('selected_for_publication')) and media_of(j)]
+        result[key] = {'date': options[0]['date'], 'slot': options[0].get('slot'), 'options': options,
+                       'selected': chosen[-1] if chosen else None}
     return result
 
 
@@ -154,14 +172,14 @@ def select(ws, identity):
     target = next((j for j in ad_jobs(ws) if j['id'] == identity), None)
     if not target:
         raise ValueError('Reklam işi bulunamadı (çekimler seçilemez, montaj işini seçin): ' + identity)
-    if not video_of(target):
-        raise ValueError(f'{identity}: bitmiş video yok; önce render edin.')
+    if not media_of(target):
+        raise ValueError(f'{identity}: bitmiş çıktı yok; önce render edin.')
     for job in ad_jobs(ws):
-        if job['date'] == target['date']:
+        if slot_key(job) == slot_key(target):
             data = read(job['_file'])
             data['selected_for_publication'] = job['id'] == identity
             write(job['_file'], data)
-    print(f"{target['date']}: {identity} yayın için seçildi.")
+    print(f"{slot_key(target)}: {identity} yayın için seçildi.")
 
 
 def caption_text(job, product):
@@ -180,6 +198,9 @@ PLATFORMS = {
     'youtube': ('YouTube Shorts', 5000),
     'ad': ('Reklam metni', 100),
 }
+
+
+IMAGE_LABELS = {'tiktok': 'TikTok foto', 'instagram': 'Instagram gönderi'}
 
 
 def caption_parts(job):
@@ -208,7 +229,12 @@ def platform_captions(job, product):
         **(job.get('captions') or {}),
     }
     out = {}
+    image = job.get('format') in ('image_post', 'carousel')
     for key, (label, limit) in PLATFORMS.items():
+        if image and key == 'youtube':
+            continue  # Shorts is video-only; posts and carousels go to the Instagram feed and TikTok photo mode.
+        if image:
+            label = IMAGE_LABELS.get(key, label)
         text = texts[key]
         warnings = [f'{len(text)} karakter; sınır {limit}.'] if len(text) > limit else []
         if key == 'instagram' and len(tags) > 30:
@@ -240,25 +266,31 @@ def product_of(ws, cfg):
 
 
 def deliver(ws, cfg):
-    """Copy each day's selected video and write its caption into NN_date folders. Never deletes."""
+    """Copy each slot's selected media (video, post or carousel slides) and its caption into NN_date[_slot]
+    folders. Never deletes."""
     target = delivery_dir(cfg)
     target.mkdir(parents=True, exist_ok=True)
     product = product_of(ws, cfg)
-    plan = days(ws)
+    plan = days(ws, cfg)
     manifest, missing = [], []
     for n, (day, info) in enumerate(plan.items(), 1):
         job = info['selected']
         if not job:
             missing.append(day)
             continue
-        folder = target/f'{n:02}_{day}'
+        folder = target/(f"{n:02}_{info['date']}" + (f"_{info['slot']}" if info['slot'] else ''))
         folder.mkdir(exist_ok=True)
-        source, video = video_of(job), folder/'video.mp4'
-        if source.resolve() != video.resolve() and (not video.exists() or digest(source) != digest(video)):
-            tmp = video.with_suffix('.part.mp4')
-            shutil.copy2(source, tmp)
-            tmp.replace(video)
-            print(f'{day}: video kopyalandı ({job["id"]})')
+        files = []
+        for source in media_of(job):
+            # Carousel slides keep their order names; a single video/post gets the usual name.
+            dest = folder/source.name
+            if source.resolve() != dest.resolve() and (not dest.exists() or digest(source) != digest(dest)):
+                tmp = dest.with_name(dest.name + '.part')
+                shutil.copy2(source, tmp)
+                tmp.replace(dest)
+                print(f'{day}: {source.name} kopyalandı ({job["id"]})')
+            files.append(dest)
+        video = files[0]
         caption = folder/'aciklama.txt'
         text = caption_text(job, product)
         if not caption.exists() or caption.read_text(encoding='utf-8') != text:
@@ -269,9 +301,10 @@ def deliver(ws, cfg):
                 path.write_text(copy, encoding='utf-8')
             for w in warnings:
                 print(f'UYARI {day} {label}: {w}')
-        when = slot(day, cfg)
-        manifest.append({'date': day, 'id': job['id'], 'variant': job.get('variant'),
-                         'folder': folder.name, 'sha256': digest(video),
+        when = slot(info['date'], cfg, info['slot'])
+        manifest.append({'date': info['date'], 'slot': info['slot'], 'format': job.get('format', 'ai_video'),
+                         'id': job['id'], 'variant': job.get('variant'), 'folder': folder.name,
+                         'files': [f.name for f in files], 'sha256': digest(video),
                          'publish_local': when[1].isoformat(timespec='minutes') if when else None})
     stale = sorted(d.name for d in target.iterdir() if d.is_dir() and d.name not in {m['folder'] for m in manifest})
     write(target/'teslim.json', {'app': (cfg.get('app') or {}).get('slug'), 'items': manifest,
@@ -285,10 +318,27 @@ def deliver(ws, cfg):
 
 
 # --- Board ------------------------------------------------------------------------------------
+FORMAT_LABELS = {'ai_video': 'AI video', 'template_video': 'Şablon video', 'image_post': 'Görsel post',
+                 'carousel': 'Carousel'}
+
+
+def media_html(files, base):
+    """Video player, a single post image, or the carousel's slides side by side."""
+    if not files:
+        return '<div class="novideo">Çıktı henüz yok</div>'
+    if files[0].suffix == '.mp4':
+        return f'<video controls preload="metadata" playsinline src="{href(files[0], base)}"></video>'
+    if len(files) == 1:
+        return f'<a href="{href(files[0], base)}"><img class="post" loading="lazy" src="{href(files[0], base)}" alt="post"></a>'
+    return ('<div class="slides">' + ''.join(
+        f'<a href="{href(f, base)}"><img loading="lazy" src="{href(f, base)}" alt="slayt {k}"></a>'
+        for k, f in enumerate(files, 1)) + '</div>')
+
+
 def day_state(info):
     if info['selected']:
         return 'ready', 'Yayına hazır'
-    if any(video_of(j) for j in info['options']):
+    if any(media_of(j) for j in info['options']):
         return 'choose', 'Seçim bekliyor'
     if any(j.get('status') in IN_PROGRESS for j in info['options']):
         return 'producing', 'Üretimde'
@@ -369,29 +419,29 @@ def board(ws, cfg, out=None):
     app = cfg.get('app') or {}
     out = Path(out or ws/'pano.html')
     product = product_of(ws, cfg)
-    plan = days(ws)
+    plan = days(ws, cfg)
     slug = app.get('slug', 'app')
     cards, counts = [], {'ready': 0, 'choose': 0, 'producing': 0, 'planned': 0}
     for n, (day, info) in enumerate(plan.items(), 1):
         state, label = day_state(info)
         counts[state] += 1
-        job = info['selected'] or next((j for j in info['options'] if video_of(j)), info['options'][0])
-        video = video_of(job)
-        when = slot(day, cfg)
+        job = info['selected'] or next((j for j in info['options'] if media_of(j)), info['options'][0])
+        files = media_of(job)
+        when = slot(info['date'], cfg, info['slot'])
         caption = caption_text(job, product)
-        target_day = date.fromisoformat(day)
+        target_day = date.fromisoformat(info['date'])
         options = []
         for o in info['options']:
-            mark = '★ seçili' if o is info['selected'] else ('video hazır' if video_of(o) else o.get('status', ''))
+            mark = '★ seçili' if o is info['selected'] else ('hazır' if media_of(o) else o.get('status', ''))
             if (o.get('review') or {}).get('verdict'):
                 mark += ' · ' + VERDICTS[o['review']['verdict']][0]
             command = f".\\run.ps1 --app {slug} sec {o['id']}"
             options.append(
                 f'<li><code>{html.escape(o["id"])}</code> <span class="muted">{html.escape(mark)}</span>'
                 + (f' <button class="link" data-copy="{html.escape(command)}">seç komutu</button>'
-                   if video_of(o) and o is not info['selected'] else '') + '</li>')
-        media = (f'<video controls preload="metadata" playsinline src="{href(video, out.parent)}"></video>' if video
-                 else '<div class="novideo">Video henüz yok</div>')
+                   if media_of(o) and o is not info['selected'] else '') + '</li>')
+        media = media_html(files, out.parent)
+        kind = FORMAT_LABELS.get(job.get('format', 'ai_video'), '')
         cards.append(f'''
 <article class="card" data-state="{state}" data-day="{day}">
   {media}
@@ -399,6 +449,7 @@ def board(ws, cfg, out=None):
     <div class="top">
       <span class="num">{n:02}</span>
       <span class="badge {state}">{label}</span>
+      <span class="kind">{html.escape(kind)}{f" · {html.escape(info['slot'])}" if info['slot'] else ''}</span>
     </div>
     <h2>{html.escape(job.get('angle') or job['id'])}</h2>
     <p class="when"><strong>{tr_date(target_day)}</strong> hedef gün{f" · {html.escape(when[0])}" if when else ""}
@@ -455,6 +506,10 @@ main {{ display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
 .card.done {{ opacity:.6; }}
 video, .novideo {{ width:100%; aspect-ratio:9/16; max-height:440px; background:#000; display:block; object-fit:contain; }}
 .novideo {{ display:flex; align-items:center; justify-content:center; color:#aaa; }}
+img.post {{ width:100%; max-height:440px; object-fit:contain; background:#000; display:block; }}
+.slides {{ display:flex; gap:4px; overflow-x:auto; background:#000; max-height:440px; scroll-snap-type:x mandatory; }}
+.slides img {{ height:440px; max-height:440px; flex:0 0 auto; scroll-snap-align:start; }}
+.kind {{ font-size:12px; color:#888; margin-left:auto; }}
 .body {{ padding:14px; display:flex; flex-direction:column; gap:8px; }}
 .top {{ display:flex; justify-content:space-between; align-items:center; }}
 .num {{ font-weight:700; color:var(--muted); }}
@@ -498,7 +553,7 @@ textarea {{ width:100%; border:1px solid var(--line); border-radius:8px; backgro
 <body>
 <header>
   <h1>{name} yayın panosu</h1>
-  <div class="muted">{total} gün · oluşturuldu {generated} · teslim klasörü: {delivery}</div>
+  <div class="muted">{total} gönderi · oluşturuldu {generated} · teslim klasörü: {delivery}</div>
   <div class="stats" role="group" aria-label="Filtre">
     <button class="on" data-filter="all">Tümü {total}</button>
     <button data-filter="ready">Yayına hazır {ready}</button>

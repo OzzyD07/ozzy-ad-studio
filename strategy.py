@@ -168,7 +168,34 @@ def schedule(product, research, start, days, library):
     return frameworks, slots
 
 
-def build(product, research, start, days, ws, refs_dir=None):
+FORMAT_GUIDE = {
+    'image_post': '`image_prompt` (a text-free scene: Qwen is asked for no letters/logos; describe blank screens/paper) + '
+                  '`post` {kicker, title with *highlight*, body, cta, layout: bottom|center|top}. One idea, ≤12 words of title.',
+    'carousel': '`slides` (4–6): slide 1 is the hook (layout center, no image), the middle slides each carry one point '
+                '(optional `image_prompt`), the last slide has `cta` and `"brand": true`. `swipe_label` in the post language.',
+    'template_video': '`promo` {scenes [{duration, kicker, title, body, media {src: assets/refs/..., device: phone}}], '
+                      '`voiceover` {text, voice}, `fitToVoiceover`: true, `captions` {style}}. No GPU: use it for '
+                      'app-screen demos, tips and listicles.',
+    'ai_video': 'MiniMax concept from the concept list above (hooks/shots); add `cuts` for extra edits of the same footage.',
+}
+
+
+def slot_plan(start, days, per_day, cfg):
+    """Markdown section: which format each day/slot gets, with the GPU budget applied."""
+    import takvim
+    rows = takvim.suggest(start, days, per_day, cfg)
+    s = takvim.settings(cfg)
+    lines = ['## Daily slots and formats', '',
+             f'{per_day} posts a day. AI video at most {s["budget"]["ai_videos_per_week"]} per week (GPU budget); '
+             'a slot that ran out of AI video budget falls back to its next format. Write one `scripts` entry per '
+             'row, in this order, with `"format"` and `"slot"` set as listed.', '',
+             '| Day | Slot | Time | Format |', '|---|---|---|---|']
+    lines += [f'| {d} | {slot or "-"} | {takvim.slot_time(slot, cfg) or "-"} | {f} |' for d, slot, f in rows]
+    lines += ['', '### Writing each format', ''] + [f'- **{k}:** {v}' for k, v in FORMAT_GUIDE.items()] + ['']
+    return lines
+
+
+def build(product, research, start, days, ws, refs_dir=None, cfg=None, per_day=1):
     features = product['features']
     hints = product.get('strategy_hints') or {}
     start = date.fromisoformat(start)
@@ -223,6 +250,8 @@ def build(product, research, start, days, ws, refs_dir=None):
             lines[-1:-1] = [f"**Trend:** {t.get('topic')} — {t.get('angle', '')}"
                             + (f" (until {t['expires']})" if t.get('expires') else '')
                             + (f" · source: {t['source']}" if t.get('source') else ''), '']
+    if per_day > 1:
+        lines += slot_plan(start, days, per_day, cfg)
     lines += ['## How to write the scripts (for the agent)', '',
               'Fill `scripts` in the product file. A 30 s concept uses `hooks` (2 alternative opening shots) and',
               '`shots` (the shared body). Each shot: `duration` (4–15), `camera` (from: ' +

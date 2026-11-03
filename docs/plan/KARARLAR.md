@@ -32,3 +32,5 @@ Her karar: tarih, ne seçildi, neden. Bir karar değişirse eskisi silinmez, "ye
 | K-26 | 2026-11-04 | Format, senaryodaki `format` alanıyla seçilir; yeni formatlar ayrı `formats.py` modülünde, AI video akışı aynen kalır | Çalışan MiniMax hattı bozulmadan genişlesin |
 | K-27 | 2026-11-04 | `run` her geçişte bir adım ilerletir (görsel gönder → sonraki geçişte indir + render) | Kuyruk GPU'yu beklerken bloklanmaz; Colab'daki toplu çalışma (K-10) bozulmaz |
 | K-28 | 2026-11-04 | Remotion bitirme isteğe bağlı (`render.engine`), varsayılan FFmpeg; kesitler yalnız Remotion'da | Görünüm kullanıcı tarafından onaylanmadan mevcut çıktı değişmesin |
+| K-29 | 2026-11-04 | Takvim modülü `takvim.py` (`calendar.py` değil); teslim ve pano anahtarı "tarih + slot" | `calendar` adı Python standart kütüphanesini gölgeler; tek gönderili eski planlar slotsuz çalışmaya devam eder |
+| K-30 | 2026-11-04 | GPU bütçesi uyarıdır, engel değil; süre tahminleri ilk gerçek ölçümlerle güncellenecek | Plan yine yazılır; kullanıcı aşımı bilerek seçebilir |
