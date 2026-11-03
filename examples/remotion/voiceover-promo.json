@@ -1,0 +1,17 @@
+{
+  "composition": "TemplatePromo",
+  "output": "workspace/remotion-out/voiceover-promo.mp4",
+  "props": {
+    "voiceover": {
+      "text": "Your week feels blurry? Write one line a day, and MentorAi shows the pattern in seven days.",
+      "voice": "af_heart"
+    },
+    "fitToVoiceover": true,
+    "captions": {"style": "box", "emphasis": ["MentorAi"]},
+    "scenes": [
+      {"duration": 2, "kicker": "Sound familiar?", "title": "Your week feels *blurry*"},
+      {"duration": 2, "title": "Write *one line* a day"},
+      {"duration": 2, "title": "See the *pattern* in 7 days"}
+    ]
+  }
+}

@@ -20,3 +20,6 @@ Her karar: tarih, ne seçildi, neden. Bir karar değişirse eskisi silinmez, "ye
 | K-14 | 2026-11-03 | Remotion 4.0.536 + React 18.3.1 sabit sürüm; render Node API ile (tek bundle, sonra renderMedia/renderStill) | En az 2 haftalık sürüm; carousel'de her slayt için yeniden bundle yok |
 | K-15 | 2026-11-03 | Spec'te olmayan isteğe bağlı alanlar render.py'de `null` gönderilir | Remotion, Studio demo defaultProps'unu her render'a karıştırıyor; demo altyazısı gerçek videoya sızdı |
 | K-16 | 2026-11-03 | Aktif kelime büyütmesi `transform` yerine font boyutuyla | Satır ASS'teki gibi yeniden akar; büyük kelime komşusunu örtmez |
+| K-17 | 2026-11-03 | Resmi `kokoro` paketi (PyTorch, CPU) kullanılır; `kokoro-onnx` değil | Kelime zamanlarını yalnızca resmi paket veriyor; altyazı senkronu Whisper'sız olur |
+| K-18 | 2026-11-03 | Seslendirme bağımlılıkları ayrı `requirements-tts.txt` (~1 GB), `setup.ps1 -Ses` ile isteğe bağlı | Disk dolu (%96); temel kurulum hafif kalsın |
+| K-19 | 2026-11-03 | Spec'te `voiceover.text` verilince ses ve altyazı render sırasında üretilir | Tek dosyadan seslendirmeli video; ayrı ses/altyazı adımı gerekmez |

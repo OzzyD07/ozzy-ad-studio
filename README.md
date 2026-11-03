@@ -232,6 +232,22 @@ Spec dosyası `{"composition", "props", "output"}` biçimindedir; örnekler `exa
 - Altyazı kelimeleri `{"text", "start", "end"}` (saniye). Whisper/`align_script` çıktısını dönüştürmek için `render.words_from_segments`.
 - Uygulamanın renkleri `app.json` içinde: `"config": {"theme": {"primary": "#FE2C55", "highlight": "#FFE500", "background": "#0B0B12", "backgroundAlt": "#2A1640"}}`.
 
+## Yerel seslendirme (Kokoro, Piper)
+
+Seslendirme bilgisayarda, CPU ile yapılır. Kurulum ayrı ve isteğe bağlıdır (~1 GB): `.\setup.ps1 -Ses` veya `pip install -r requirements-tts.txt`. Modeller ilk kullanımda `workspace/models` altına iner (Kokoro ~330 MB).
+
+- **Kokoro-82M** (varsayılan, İngilizce): kelime zamanlarını kendisi verir. Sesler: `.\run.ps1 seslendir --sesler` (ör. `af_heart`, `am_michael`, `bf_emma`, `bm_george`).
+- **Piper** (Türkçe, varsayılan kapalı, K-9): `config.json → "tts": {"turkish": true}`. Zamanlamayı Whisper çıkarır, yazımı metinden alır (`align_script`).
+
+```powershell
+.\run.ps1 seslendir "Write one line a day." --ses am_michael --output workspace\ses\deneme.wav   # + deneme.words.json
+.\run.ps1 --app mentorai remotion examples\remotion\voiceover-promo.json
+```
+
+Remotion spec'inde `"voiceover": {"text": "…", "voice": "af_heart", "speed": 1.0}` yazmak yeterli: ses üretilir, kelime zamanları altyazı olur (`"captions": null` ile kapanır, verilen `captions` ayarları korunur). `TemplatePromo` için `"fitToVoiceover": true` sahne sürelerini konuşmaya göre esnetir; bitiş kartı konuşma bitince gelir.
+
+Ayarlar (`config.json` → `tts`): `voice`, `speed`, `turkish`, `piper_voice` ve `pronounce`. `pronounce` marka adlarının okunuşu içindir, ör. `{"MentorAi": "/mˈɛntɔɹ ˌAˈI/"}` (Kokoro fonem yazımı; altyazıda yazılış değişmez).
+
 ## MCP bağlantısı
 
 `config.json` yerel bağlantı bilgilerini içerir ve Git dışında tutulur. Desteklenen bağlantılar: stdio ve Streamable HTTP. `mcp.command`/`args` veya `mcp.transport=http` ve `mcp.url` alanlarını doldurun. HTTP bearer anahtarı dosya yerine PowerShell ortam değişkeninden alınabilir:

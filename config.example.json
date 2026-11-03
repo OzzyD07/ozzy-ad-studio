@@ -65,6 +65,13 @@
   "audio": {
     "loudnorm": true
   },
+  "tts": {
+    "voice": "af_heart",
+    "speed": 1.0,
+    "pronounce": {},
+    "turkish": false,
+    "piper_voice": "tr_TR-dfki-medium"
+  },
   "music": {
     "file": "",
     "volume": 0.22

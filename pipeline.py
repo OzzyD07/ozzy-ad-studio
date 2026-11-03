@@ -817,6 +817,14 @@ def main():
     a = sub.add_parser('remotion', help='Remotion ile video/görsel üretir (AdVideo, TemplatePromo, PostStill, Carousel)')
     a.add_argument('spec', help='JSON: {"composition", "props", "output"}; örnekler examples/remotion/')
     a.add_argument('--output', help='Spec içindeki çıktı yolunun yerine')
+    a = sub.add_parser('seslendir', help='Yerel seslendirme: Kokoro (İngilizce), Piper (Türkçe); WAV + kelime zamanları')
+    a.add_argument('metin', nargs='?', help='Seslendirilecek metin (veya --dosya)')
+    a.add_argument('--dosya', help='Metni bu dosyadan okur')
+    a.add_argument('--output', help='WAV yolu; yanına .words.json yazılır')
+    a.add_argument('--ses', help='ör. af_heart, am_michael, bf_emma; Türkçe: tr_TR-dfki-medium')
+    a.add_argument('--dil', help='en, tr …; verilmezse sesin dilinden')
+    a.add_argument('--hiz', type=float, help='Konuşma hızı, ör. 1.1')
+    a.add_argument('--sesler', action='store_true', help='Kullanılabilir sesleri listeler')
     for name in ['render', 'process', 'edit']:
         a = sub.add_parser(name)
         if name == 'edit':
@@ -853,7 +861,7 @@ def main():
         return
     if args.cmd in ('run', 'status') and args.app == 'all':
         targets = [open_app(cfg, slug) for slug in apps(cfg)]
-    elif args.cmd in ('doctor', 'mcp-tools') or (args.cmd in ('process', 'edit', 'remotion') and not args.app):
+    elif args.cmd in ('doctor', 'mcp-tools') or (args.cmd in ('process', 'edit', 'remotion', 'seslendir') and not args.app):
         targets = [(Path(cfg['workspace']), cfg)]  # No app needed; process/edit/remotion take --app for its icon.
     else:
         targets = [open_app(cfg, args.app)]
@@ -926,6 +934,21 @@ def main():
         import render
         for path in render.render_spec(args.spec, cfg, args.output):
             print(path)
+    elif args.cmd == 'seslendir':
+        import tts
+        if args.sesler:
+            for lang, voices in tts.KOKORO_VOICES.items():
+                print(('ABD İngilizcesi' if lang == 'a' else 'İngiliz İngilizcesi') + ' (Kokoro): ' + ', '.join(voices))
+            state = 'açık' if tts.settings(cfg)['turkish'] else 'kapalı, config.json → tts.turkish'
+            print(f'Türkçe (Piper, {state}): ' + ', '.join(tts.PIPER_VOICES))
+            return
+        text = Path(args.dosya).read_text(encoding='utf-8-sig') if args.dosya else args.metin
+        if not text:
+            raise ValueError('Metin veya --dosya gerekli.')
+        output = Path(args.output or ws/'audio'/(datetime.now().strftime('%Y%m%d-%H%M%S') + '.wav'))
+        result = tts.speak(text, output, cfg, language=args.dil, voice=args.ses, speed=args.hiz)
+        write(output.with_suffix('.words.json'), result)
+        print(f"{result['audio']}  {result['duration']} sn, {len(result['words'])} kelime, {result['engine']}/{result['voice']}")
     elif args.cmd in ('process', 'edit'):
         from media import assemble, finish
         extras = dict(hook_text=args.hook_text, music=args.music,
