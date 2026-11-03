@@ -65,6 +65,8 @@ class FakeComfy:
 
             def do_GET(self):
                 url = urlparse(self.path)
+                if url.path == '/object_info':
+                    return self.send(200, {})  # empty: schema validation is skipped
                 if url.path == '/system_stats':
                     return self.send(200, {'devices': [{'name': 'Fake RTX PRO 6000', 'vram_total': 96 * 1024**3,
                                                          'vram_free': 90 * 1024**3}]})

@@ -275,6 +275,9 @@ class Studio:
         engine = self.engines[job['engine']]
         refs = self._inputs(job)
         workflow, meta = engine.build({**job['request'], 'job_id': job['id']}, refs, self.model_files())
+        warnings = self.comfy.validate(workflow)
+        if warnings:
+            meta['workflow_warnings'] = warnings
         with self.lock:
             job['metadata'] = meta
             self._save(job)

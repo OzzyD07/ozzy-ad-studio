@@ -58,6 +58,23 @@ class EngineTest(unittest.TestCase):
         self.assertEqual(wf['9']['inputs']['model'], ['50', 0])
         self.assertEqual(meta['steps'], 10)
 
+    def test_comfy_validate_drops_only_optional_inputs(self):
+        comfy = Comfy('http://unused')
+        comfy._object_info = {
+            'MiniMaxH3ImageToVideo': {'input': {'required': {'clip': [], 'vae': [], 'prompt': [], 'width': [],
+                                                             'height': [], 'length': []}}},
+            'LoadImage': {'input': {'required': {'image': []}}}}
+        wf = {'8': {'class_type': 'MiniMaxH3ImageToVideo',
+                    'inputs': {'clip': ['2', 0], 'audio_vae': ['4', 0], 'prompt': 'p', 'ref_images.ref_image_0': ['101', 0]}},
+              '101': {'class_type': 'LoadImage', 'inputs': {'image': 'a.png', 'typo': 1}}}
+        warnings = comfy.validate(wf)
+        self.assertNotIn('audio_vae', wf['8']['inputs'])
+        self.assertIn('ref_images.ref_image_0', wf['8']['inputs'])  # dynamic input kept
+        self.assertIn('typo', wf['101']['inputs'])  # unknown non-optional input is left for ComfyUI to reject
+        self.assertEqual(len(warnings), 1)
+        with self.assertRaisesRegex(Exception, 'düğüm yok: SaveVideo'):
+            comfy.validate({'1': {'class_type': 'SaveVideo', 'inputs': {}}})
+
     def test_minimax_validation(self):
         with self.assertRaises(EngineError):
             MiniMaxH3().validate({'duration': 20})
