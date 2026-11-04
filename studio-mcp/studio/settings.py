@@ -8,7 +8,7 @@ PACKAGE = Path(__file__).resolve().parent.parent
 
 @dataclass
 class Settings:
-    home: Path  # jobs/, assets/, outputs/ (on Drive in Colab, so a restart keeps history)
+    home: Path  # jobs/, assets/, outputs/, backups/ (on Drive in Colab, so a restart keeps history)
     workflows: Path  # *.api.json templates exported from ComfyUI + *.bind.json bindings
     comfy_url: str
     token: str
@@ -32,6 +32,6 @@ class Settings:
         )
         values.update(overrides)
         s = cls(**values)
-        for sub in ('jobs', 'assets', 'outputs'):
+        for sub in ('jobs', 'assets', 'outputs', 'backups'):
             (s.home/sub).mkdir(parents=True, exist_ok=True)
         return s

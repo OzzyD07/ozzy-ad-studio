@@ -24,6 +24,12 @@
     "fonts_dir": "assets/fonts",
     "margin_v": 640
   },
+  "backup": {
+    "dir": "",
+    "keep": 10,
+    "skip_dirs": ["exports", "raw", "review"],
+    "max_file_mb": 50
+  },
   "mcp": {
     "transport": "stdio",
     "command": "",

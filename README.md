@@ -259,6 +259,21 @@ Spec dosyası `{"composition", "props", "output"}` biçimindedir; örnekler `exa
 
 Ayarlar `app.json → "config": {"calendar": …}` (yoksa varsayılanlar): `per_day`, `slots` (ad, saat, formatlar; saatler `publish.timezone`'da), `budget` (`ai_videos_per_week`, `images_per_day`), `gpu` (süre ve işlem birimi tahminleri). `plan` dosyası "GPU bütçesi" bölümünde video/görsel sayısını, tahmini Colab süresini ve işlem birimini yazar; bütçe aşılırsa uyarır. Senaryoda `"slot"` verilirse o slot kullanılır. Görsel post ve carousel için açıklamalar Instagram gönderisi ve TikTok foto olarak yazılır (YouTube Shorts yok).
 
+## Kampanya verisinin yedeği
+
+`workspace/` git'e girmez (public repo), bu yüzden kampanya verisi ayrıca yedeklenir:
+
+```powershell
+.\run.ps1 yedekle                  # workspace/apps → zip; Colab açıksa Studio MCP ile MyDrive/OzzyAdStudio/backups
+.\run.ps1 yedekle --yerel          # yalnızca yerel zip (workspace/backups)
+.\run.ps1 yedek-geri drive         # Drive'daki en yeni yedeği workspace/restore altına açar
+.\run.ps1 yedek-geri drive --uygula   # workspace/apps üzerine yazar (önce mevcut hâl yedeklenir)
+```
+
+Üretilmiş medya (`exports`, `raw`, `review`) ve 50 MB'tan büyük dosyalar zipe girmez. `config.json → backup`: `dir` (ikinci bir kopya klasörü, ör. `D:/Yedek/OtoReklam`), `keep` (yerelde tutulan yedek sayısı), `skip_dirs`, `max_file_mb`. Drive'da en yeni 30 yedek tutulur. Colab kapalıysa yerel zip yine yazılır, komut uyarı verir.
+
+Colab'da hücre 3'teki `MODEL_CACHE` modelleri o oturum için yerel SSD'ye kopyalar (`minimax` ≈ 42 GB, `all` ≈ 75 GB); ilk yükleme ve video↔görsel geçişleri Drive'a göre hızlanır. Varsayılan `drive`: kopya yok, doğrudan Drive.
+
 ## Yerel seslendirme (Kokoro, Piper)
 
 Seslendirme bilgisayarda, CPU ile yapılır. Kurulum ayrı ve isteğe bağlıdır (~1 GB): `.\setup.ps1 -Ses` veya `pip install -r requirements-tts.txt`. Modeller ilk kullanımda `workspace/models` altına iner (Kokoro ~330 MB).

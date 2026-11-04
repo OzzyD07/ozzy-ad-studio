@@ -69,15 +69,15 @@ Bitti sayılır: yeni bir Colab oturumu tek "Hepsini çalıştır" ile güncel k
 - [x] Hücre 2: ComfyUI + bağımlılıklar
 - [x] Hücre 3–4: modeller, ComfyUI + Studio MCP + sabit ngrok adresi; hücre 4 sunucuyu güncel kodla yeniden başlatır
 - [x] Oturum düşerse işler Drive'dan okunur, yarım kalan iş tekrar sıraya girer (canlıda görüldü)
-- [ ] Yerel `workspace/apps` için Drive yedeği (K-13)
-- [ ] Hız: modeller ilk yüklemede Drive'dan yavaş okunuyor (MiniMax ilk iş ~5 dk). İsteğe bağlı "Colab SSD'ye kopyala" modu (eski notebook'taki `fast_minimax` gibi)
-- [ ] Notebook'taki geçici hücreler yerine hücre 4'ün yeni sürümü (Colab GitHub kopyası yeniden açılınca gelir)
+- [x] Yerel `workspace/apps` için Drive yedeği (K-13, K-32): `pipeline.py yedekle` medya hariç zipler, Studio MCP `save_backup` ile `MyDrive/OzzyAdStudio/backups`'a yazar; yerel kopya `workspace/backups` (+ isteğe bağlı `backup.dir`); `yedek-geri` ile geri yükleme. Drive'a gönderim canlıda henüz denenmedi
+- [x] Hız: hücre 3'te `MODEL_CACHE` = `drive` / `minimax` / `all` (K-31); seçilen modeller oturum için yerel SSD'ye kopyalanır, ComfyUI önce SSD'den okur. Gerçek süre kazancı ilk Colab oturumunda ölçülecek
+- [ ] Notebook'taki geçici hücreyi silmek (kullanıcı yapacak; GitHub'daki sürümde yok)
 
 ## Faz 5 — OtoReklam entegrasyonu `[~]`
 Bitti sayılır: tek plandan dört içerik tipi de üretilip teslim klasörüne düşer.
 - [x] İçerik tipleri: `ai_video`, `template_video`, `image_post`, `carousel` (`formats.py`, plan + run)
 - [x] `config.json → mcp`: `image_tool`, `image_arguments`, `image_result_path` (varsayılanlar kodda)
-- [~] Plan yeni formatları okur; `strategy` brifinin formatları önermesi Faz 6'daki takvimle birlikte
+- [x] Plan yeni formatları okur; `strategy` brifi formatları Faz 6'daki takvimle öneriyor
 - [x] Bir AI klibinden birden çok kesit (`cuts`: kırpma, hook, altyazı stili); bitiş kartı konuşmayı bekler
 - [x] AI video bitirme Remotion'da (`render.engine = "remotion"`); FFmpeg yolu varsayılan/yedek. Çok çekimli montaj hâlâ FFmpeg
 - [x] `tests/test_formats.py` (54 test); yerelde gerçek Remotion + Whisper ile post, şablon video ve 2 kesit denendi

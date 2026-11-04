@@ -233,6 +233,24 @@ class ServerTest(unittest.TestCase):
         self.assertEqual(again.jobs[job_id]['status'], 'queued')
         self.assertIn('clear', self.fake.events)  # the orphaned ComfyUI prompt is dropped
 
+    def test_backup_saved_listed_and_downloadable(self):
+        import io
+        import zipfile
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, 'w') as z:
+            z.writestr('demo/app.json', '{}')
+        data = base64.b64encode(buf.getvalue()).decode()
+        saved = self.call('save_backup', {'name': 'apps-20261104-120000.zip', 'base64_data': data})
+        self.assertEqual(saved['saved'], 'apps-20261104-120000.zip')
+        self.assertTrue((Path(self.tmp.name)/'backups'/'apps-20261104-120000.zip').is_file())
+        url = self.call('list_backups')['backups'][0]['url']
+        with urllib.request.urlopen(f'http://127.0.0.1:{self.port}{url}') as r:
+            self.assertEqual(r.read(), buf.getvalue())
+        with self.assertRaisesRegex(RuntimeError, 'name'):
+            self.call('save_backup', {'name': '../x.zip', 'base64_data': data})
+        with self.assertRaisesRegex(RuntimeError, 'zip'):
+            self.call('save_backup', {'name': 'x.zip', 'base64_data': base64.b64encode(b'not a zip').decode()})
+
     def test_status_and_models(self):
         status = self.call('server_status')
         self.assertTrue(status['comfyui']['online'])
@@ -240,6 +258,30 @@ class ServerTest(unittest.TestCase):
         names = [m['name'] for m in self.call('list_models')['models']]
         self.assertEqual(names, ['minimax_h3', 'qwen_image'])
 
+
+
+class ColabCacheTest(unittest.TestCase):
+    def test_ssd_copy_and_model_paths(self):
+        from studio import colab
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            drive, ssd, comfy = tmp/'drive', tmp/'ssd', tmp/'comfy'
+            comfy.mkdir()
+            files = [{'file': 'diffusion_models/m.safetensors', 'size': 5}, {'file': 'vae/v.safetensors', 'size': 3}]
+            for f in files:
+                (drive/f['file']).parent.mkdir(parents=True, exist_ok=True)
+                (drive/f['file']).write_bytes(b'x' * f['size'])
+            with patch.object(colab, 'CACHE_HEADROOM', 0), patch.object(colab, 'COMFY', comfy),                     patch.object(colab, '_get', lambda *a, **k: None):
+                self.assertEqual(colab.cache_models(files, drive, ssd), ssd)
+                self.assertEqual((ssd/'vae'/'v.safetensors').read_bytes(), b'xxx')
+                self.assertEqual(list(ssd.rglob('*.part')), [])
+                colab.link_models(drive, ssd)
+                yaml = (comfy/'extra_model_paths.yaml').read_text(encoding='utf-8')
+                self.assertLess(yaml.index('ssd:'), yaml.index('drive:'))  # SSD first, Drive as fallback
+                colab.link_models(drive)
+                self.assertNotIn('ssd:', (comfy/'extra_model_paths.yaml').read_text(encoding='utf-8'))
+            with patch.object(colab, 'CACHE_HEADROOM', 1e18):  # no room: Drive is used
+                self.assertIsNone(colab.cache_models([{'file': 'x', 'size': 1}], drive, tmp/'ssd2'))
 
 if __name__ == '__main__':
     unittest.main()
