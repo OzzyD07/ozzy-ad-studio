@@ -663,10 +663,11 @@ def render_job(args, cfg, ws):
         assemble_job(job, path, cfg, ws)
     if job['status'] != 'raw_ready':
         raise ValueError('İşin videosu hazır değil; generate veya attach kullanın.')
-    if (cfg.get('render') or {}).get('engine') == 'remotion' and not args.srt:
+    # Remotion is the default finisher (K-33); "engine": "ffmpeg" and a hand-made --srt keep the FFmpeg path.
+    if (cfg.get('render') or {}).get('engine', 'remotion') == 'remotion' and not args.srt:
         return formats.finish_ai_video(job, path, cfg, ws)  # Remotion finishing; job "cuts" → several files.
     if job.get('cuts'):
-        raise ValueError('Kesitler (cuts) yalnızca render.engine = "remotion" ile üretilir.')
+        raise ValueError('Kesitler (cuts) yalnızca Remotion ile üretilir (render.engine = "remotion", varsayılan).')
     output = ws/'exports'/job['id']
     if output.exists():
         raise ValueError('Çıktı zaten var; kesilen işlemin çıktısını kontrol edin: ' + str(output))

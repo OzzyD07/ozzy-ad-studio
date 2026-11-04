@@ -238,12 +238,12 @@ Spec dosyası `{"composition", "props", "output"}` biçimindedir; örnekler `exa
 
 | format | Ne olur | Çıktı (`exports/<iş>/`) |
 |---|---|---|
-| (yok) / `ai_video` | MiniMax video → altyazı, hook, bitiş kartı. `config.json → "render": {"engine": "remotion"}` ile Remotion'da biter | `video.mp4` |
+| (yok) / `ai_video` | MiniMax video → altyazı, hook, bitiş kartı; Remotion'da biter (varsayılan). Eski FFmpeg yolu: `"render": {"engine": "ffmpeg"}` | `video.mp4` |
 | `image_post` | `image_prompt` ile Qwen görseli (Studio MCP) → Remotion'da başlık/metin/CTA/ikon | `post.png` |
 | `carousel` | `image_prompt` içeren her slayt için Qwen görseli → Remotion carousel; `"brand": true` slayta uygulama adı/ikon koyar | `01.png`, `02.png` … |
 | `template_video` | GPU yok: Remotion `TemplatePromo` + Kokoro seslendirme (`promo.voiceover.text`) | `video.mp4` |
 
-**Kesitler (`cuts`):** Bir AI klibinden birden çok bitmiş video, ör. `"cuts": [{"name": "video"}, {"name": "kisa", "trim": [0, 6], "hook_text": "POV: …", "caption_style": "hormozi"}]`. Her kesitin kendi kırpması, üst metni ve altyazı stili olur; ek GPU üretimi gerekmez (yalnızca `render.engine = "remotion"`).
+**Kesitler (`cuts`):** Bir AI klibinden birden çok bitmiş video, ör. `"cuts": [{"name": "video"}, {"name": "kisa", "trim": [0, 6], "hook_text": "POV: …", "caption_style": "hormozi"}]`. Her kesitin kendi kırpması, üst metni ve altyazı stili olur; ek GPU üretimi gerekmez (Remotion ile; FFmpeg yolunda yok).
 
 `.\run.ps1 --app mentorai run` her geçişte işleri bir adım ilerletir: görseli gönderir, sonraki geçişte indirip render eder. Görsel ayarları `config.json → mcp`: `image_tool` (`generate_image`), `image_arguments`, `image_result_path` (`job.output_image`).
 

@@ -36,3 +36,4 @@ Her karar: tarih, ne seçildi, neden. Bir karar değişirse eskisi silinmez, "ye
 | K-30 | 2026-11-04 | GPU bütçesi uyarıdır, engel değil; süre tahminleri ilk gerçek ölçümlerle güncellenecek | Plan yine yazılır; kullanıcı aşımı bilerek seçebilir |
 | K-31 | 2026-11-04 | Colab'da modeller isteğe bağlı olarak oturum için yerel SSD'ye kopyalanır (`MODEL_CACHE`, varsayılan `drive`); ComfyUI önce SSD'ye, sonra Drive'a bakar | Drive ilk yüklemede ve her video↔görsel geçişinde yavaş; kalıcı kopya yine yalnızca Drive (K-23) |
 | K-32 | 2026-11-04 | `workspace/apps` yedeği Studio MCP üzerinden Drive'a gider (`save_backup`), üretilmiş medya hariç; yerel zip her zaman kalır | Bilgisayarda Google Drive uygulaması yok; ek hesap/kurulum gerekmez. Medya yeniden üretilebilir ve büyük |
+| K-33 | 2026-11-04 | AI video bitirmenin varsayılanı Remotion (K-28'in yerine); FFmpeg `render.engine = "ffmpeg"` ile seçilir | Kullanıcı kararı; kesitler ve aynı görünüm tüm formatlarda |
