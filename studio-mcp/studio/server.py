@@ -6,11 +6,15 @@ Every MCP request needs "Authorization: Bearer $STUDIO_TOKEN" (K-11). Output fil
 /files/<path>?sig=<hmac>, so the links that get_job returns download without a header.
 """
 import argparse
+import base64
+import binascii
 import hmac
+import io
 import logging
 import re
 import mimetypes
 import shutil
+import zipfile
 from pathlib import Path
 from typing import Any, Literal
 from urllib.parse import parse_qs
@@ -29,7 +33,11 @@ INSTRUCTIONS = """Ozzy Ad Studio: Colab GPU'da video (MiniMax H3 Ref2VA FP8) ve 
 Aynı türdeki işler art arda çalışır (önce videolar, sonra görseller); model değişiminde VRAM bir kez boşaltılır.
 Referanslar önce upload_asset ile yüklenir; dönen asset_id images/videos/audios listelerinde kullanılır.
 MiniMax'ta konuşma yalnızca <d>[English] …</d> içinde yazılır; negatif prompt CFG 1.0 olduğu için etkisizdir.
-Görseller varsayılan olarak yazısız üretilir; metin, logo ve rozetler Remotion'da eklenir."""
+Görseller varsayılan olarak yazısız üretilir; metin, logo ve rozetler Remotion'da eklenir.
+save_backup/list_backups: OtoReklam kampanya verisinin (workspace/apps) Drive yedeği."""
+BACKUP_NAME = re.compile(r'^[A-Za-z0-9][A-Za-z0-9._-]{0,120}\.zip$')
+MAX_BACKUP_BYTES = 200 << 20
+KEEP_BACKUPS = 30
 
 
 def build(settings: Settings, comfy=None, start_worker=True):
@@ -160,6 +168,37 @@ def build(settings: Settings, comfy=None, start_worker=True):
         """ComfyUI'deki tüm modelleri VRAM'den boşaltır (iş çalışmıyorken)."""
         studio.free_vram()
         return {'ok': True}
+
+    def backups():
+        items = sorted((settings.home/'backups').glob('*.zip'), key=lambda p: p.stat().st_mtime, reverse=True)
+        return [{'name': p.name, 'bytes': p.stat().st_size, 'url': link(f'backups/{p.name}')} for p in items]
+
+    @mcp.tool()
+    def save_backup(name: str, base64_data: str) -> dict[str, Any]:
+        """Bir .zip yedeğini Drive'a yazar (MyDrive/OzzyAdStudio/backups); en yeni 30 yedek tutulur."""
+        if not BACKUP_NAME.match(name):
+            raise ValueError('name: yalnızca harf, rakam ve ._- içeren bir .zip adı olmalı')
+        try:
+            data = base64.b64decode(base64_data, validate=True)
+        except (binascii.Error, ValueError):
+            raise ValueError('base64_data çözülemedi')
+        if len(data) > MAX_BACKUP_BYTES:
+            raise ValueError('Yedek 200 MB sınırını aşıyor')
+        if not zipfile.is_zipfile(io.BytesIO(data)):
+            raise ValueError('Geçerli bir zip değil')
+        folder = settings.home/'backups'
+        folder.mkdir(parents=True, exist_ok=True)
+        part = folder/(name + '.part')
+        part.write_bytes(data)
+        part.replace(folder/name)
+        for old in backups()[KEEP_BACKUPS:]:
+            (folder/old['name']).unlink(missing_ok=True)
+        return {'saved': name, 'bytes': len(data), 'folder': str(folder), 'backups': backups()[:5]}
+
+    @mcp.tool()
+    def list_backups() -> dict[str, Any]:
+        """Drive'daki yedekler (yeniden eskiye) ve imzalı indirme bağlantıları."""
+        return {'backups': backups()}
 
     @mcp.custom_route('/health', methods=['GET'])
     async def health(request: Request) -> Response:

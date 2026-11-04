@@ -836,6 +836,11 @@ def main():
     a.add_argument('id'); a.add_argument('sureler', help='ör. 8+8 veya 7+8')
     a.add_argument('--not', dest='note'); a.add_argument('--zincir', action='store_true')
     a.add_argument('--gorsel2', help='2. parçada ne olacağı (varsayılan: promptun zaman çizelgesinden)')
+    a = sub.add_parser('yedekle', help="workspace/apps'ı (medya hariç) zipler; Studio MCP üzerinden Drive'a gönderir")
+    a.add_argument('--yerel', action='store_true', help="Yalnızca yerel zip (Drive'a gönderme)")
+    a = sub.add_parser('yedek-geri', help='Bir yedeği workspace/restore altına açar; --uygula ile workspace/apps üzerine yazar')
+    a.add_argument('kaynak', help='Zip yolu veya "drive" (Drive\'daki en yeni yedek)')
+    a.add_argument('--uygula', action='store_true', help='Açılan dosyaları workspace/apps üzerine kopyalar (önce mevcut veri yedeklenir)')
     a = sub.add_parser('analyze'); a.add_argument('source')
     a = sub.add_parser('plan')
     a.add_argument('--product'); a.add_argument('--research')
@@ -899,6 +904,28 @@ def main():
             jobs = [read(p) for p in (ws/'jobs').glob('*.json')]
             done = sum(j['status'] == 'done' for j in jobs)
             print(f"{slug:16} {read(ws/'app.json')['name']:20} {len(jobs)} iş, {done} tamam")
+        return
+    if args.cmd in ('yedekle', 'yedek-geri'):
+        import backup
+        if args.cmd == 'yedekle':
+            r = backup.backup(cfg, send=not args.yerel)
+            print(f"Yerel yedek: {r['zip']} ({r['files']} dosya, {r['bytes'] / 1024:.0f} KB)")
+            for path in r['skipped_big']:
+                print('  ⚠️ büyük dosya atlandı (backup.max_file_mb): ' + path)
+            if r['copy']:
+                print('Kopya: ' + r['copy'])
+            if r['drive']:
+                print('Drive: ' + r['drive'])
+            elif not args.yerel:
+                print("⚠️ Drive'a gönderilemedi (Colab açık mı?): " + r['drive_error'])
+                sys.exit(1)
+        else:
+            r = backup.restore(cfg, args.kaynak, args.uygula)
+            print(f"{r['zip']}: {r['files']} dosya → {r['staging']}")
+            if r['applied']:
+                print('workspace/apps güncellendi' + (f" (önceki hâli: {r['before']})" if r['before'] else ''))
+            else:
+                print('İnceleyin; workspace/apps üzerine yazmak için aynı komutu --uygula ile çalıştırın.')
         return
     if args.cmd in ('run', 'status') and args.app == 'all':
         targets = [open_app(cfg, slug) for slug in apps(cfg)]

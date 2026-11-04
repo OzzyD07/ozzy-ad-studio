@@ -4,6 +4,7 @@ Layout on Drive:
   MyDrive/OzzyAdStudio/code      git clone of the repo: the code that runs; GitHub is the source/backup
   MyDrive/OzzyAdStudio/{jobs,assets,outputs}
   MyDrive/OzzyVision-Lab/models  model weights (shared with the old studio, so nothing downloads twice; K-23)
+  /content/models_cache          optional session copy on Colab's local SSD (cache="minimax" or "all"; K-31)
 """
 import hashlib
 import json
@@ -13,6 +14,7 @@ import shutil
 import subprocess
 import time
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 REPO = 'https://github.com/OzzyD07/ozzy-ad-studio.git'
@@ -21,6 +23,10 @@ HOME = DRIVE/'OzzyAdStudio'
 CODE = HOME/'code'
 COMFY = Path('/content/ComfyUI')
 LOGS = Path('/content/logs')
+CACHE = Path('/content/models_cache')
+# Which engines' weights are copied to the local SSD. Drive stays the only permanent copy (K-23).
+CACHE_MODES = {'drive': (), 'minimax': ('minimax_h3',), 'all': ('minimax_h3', 'qwen_image')}
+CACHE_HEADROOM = 20e9  # left free on /content for ComfyUI, outputs and pip
 
 
 def run(cmd, **kw):
@@ -70,14 +76,21 @@ def sha256(path, chunk=64 << 20):
     return h.hexdigest()
 
 
-def ensure_models(qwen_variant='bf16', verify_sha=False, engines=('minimax_h3', 'qwen_image')):
-    """Download missing weights straight to Drive, check sizes (and sha256 once, cached), report what is missing."""
+def manifest_files(manifest, engines, qwen_variant='bf16'):
+    return [f for e in engines for f in manifest[e]['default' if e == 'minimax_h3' else qwen_variant]]
+
+
+def ensure_models(qwen_variant='bf16', verify_sha=False, engines=('minimax_h3', 'qwen_image'), cache='drive'):
+    """Download missing weights straight to Drive, check sizes (and sha256 once, cached), report what is missing.
+    cache="minimax"/"all" then copies those weights to the local SSD for this session (see cache_models)."""
     from huggingface_hub import hf_hub_download
+    if cache not in CACHE_MODES:
+        raise ValueError('cache: ' + ', '.join(CACHE_MODES))
     manifest = json.loads((CODE/'studio-mcp'/'models.json').read_text(encoding='utf-8'))
     root = models_dir()
     marks = root/'.verified.json'
     verified = json.loads(marks.read_text()) if marks.is_file() else {}
-    files = [f for e in engines for f in manifest[e]['default' if e == 'minimax_h3' else qwen_variant]]
+    files = manifest_files(manifest, engines, qwen_variant)
     need = sum(f['size'] for f in files if not (root/f['file']).is_file())
     free = shutil.disk_usage(DRIVE).free
     print(f'📦 Modeller: {root}  (eksik {need / 1e9:.1f} GB, Drive boş {free / 1e9:.1f} GB)')
@@ -110,15 +123,59 @@ def ensure_models(qwen_variant='bf16', verify_sha=False, engines=('minimax_h3', 
     marks.write_text(json.dumps(verified, indent=1))
     if problems:
         raise RuntimeError('Model sorunları:\n  ' + '\n  '.join(problems))
-    link_models(root)
+    wanted = [e for e in CACHE_MODES[cache] if e in engines]
+    cached = cache_models(manifest_files(manifest, wanted, qwen_variant), root) if wanted else None
+    link_models(root, cached)
 
 
-def link_models(root):
-    """Point ComfyUI at the Drive folder (extra_model_paths.yaml): no copies on the Colab disk."""
-    yaml = COMFY/'extra_model_paths.yaml'
-    yaml.write_text(f'drive:\n  base_path: {root}\n  diffusion_models: |\n    diffusion_models\n    unet\n'
-                    '  text_encoders: |\n    text_encoders\n    clip\n  vae: vae\n  loras: loras\n', encoding='utf-8')
-    print('🔗 ComfyUI modelleri Drive\'dan okuyacak:', root)
+def cache_models(files, root, cache=None, workers=3):
+    """Copy weights from Drive to the local SSD. Drive (a network mount) is slow for the first load and again
+    after every video↔image switch frees VRAM (K-10); the SSD copy makes those reloads disk-fast. The copy lives
+    only for the session. Returns the cache folder, or None when the SSD has no room (Drive is used instead)."""
+    cache = Path(cache or CACHE)
+    todo = [f for f in files if not ((cache/f['file']).is_file() and (cache/f['file']).stat().st_size == f['size'])]
+    need = sum(f['size'] for f in todo)
+    probe = cache if cache.exists() else cache.parent
+    free = shutil.disk_usage(probe if probe.exists() else '/').free
+    if need and need > free - CACHE_HEADROOM:
+        print(f'⚠️  SSD\'de yer yok (gerekli {need / 1e9:.1f} GB + {CACHE_HEADROOM / 1e9:.0f} GB pay, boş {free / 1e9:.1f} GB);'
+              ' modeller Drive\'dan okunacak.')
+        return None
+    if not todo:
+        print(f'⚡ SSD kopyası zaten hazır: {len(files)} dosya ({cache})')
+        return cache
+    print(f'⚡ {len(todo)} model dosyası SSD\'ye kopyalanıyor ({need / 1e9:.1f} GB)...')
+    start = time.time()
+
+    def copy(f):
+        target = cache/f['file']
+        target.parent.mkdir(parents=True, exist_ok=True)
+        part = target.with_name(target.name + '.part')  # ComfyUI never sees a half-copied file
+        t = time.time()
+        shutil.copyfile(root/f['file'], part)
+        if part.stat().st_size != f['size']:
+            part.unlink()
+            raise RuntimeError(f'{target.name}: SSD kopyası eksik')
+        part.replace(target)
+        print(f'   ✅ {target.name} ({f["size"] / 1e9:.1f} GB, {time.time() - t:.0f} sn)')
+
+    with ThreadPoolExecutor(workers) as pool:
+        list(pool.map(copy, todo))
+    took = time.time() - start
+    print(f'⚡ SSD kopyası hazır: {need / 1e9:.1f} GB, {took / 60:.1f} dk ({need / 1e6 / max(took, 1):.0f} MB/sn)')
+    return cache
+
+
+def link_models(root, cache=None):
+    """Point ComfyUI at the model folders (extra_model_paths.yaml). With an SSD copy it is listed first, so
+    ComfyUI takes a file from the SSD when it is there and from Drive otherwise."""
+    section = ('  diffusion_models: |\n    diffusion_models\n    unet\n'
+               '  text_encoders: |\n    text_encoders\n    clip\n  vae: vae\n  loras: loras\n')
+    text = (f'ssd:\n  base_path: {cache}\n' + section if cache else '') + f'drive:\n  base_path: {root}\n' + section
+    (COMFY/'extra_model_paths.yaml').write_text(text, encoding='utf-8')
+    print('🔗 ComfyUI modelleri ' + (f'önce SSD\'den ({cache}), yoksa ' if cache else '') + 'Drive\'dan okuyacak:', root)
+    if _get('http://127.0.0.1:8188/system_stats'):
+        print('ℹ️  ComfyUI zaten çalışıyor; yeni yollar için onu kapatıp hücre 4\'ü çalıştırın: !pkill -f main.py')
 
 
 # ---------- 3. processes ----------

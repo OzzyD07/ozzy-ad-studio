@@ -15,6 +15,7 @@ MiniMax tarafı OzzyVision-Lab'ın (`VideoAi`) çalışan motorundan taşındı:
 | `cancel_job`, `retry_job`, `reorder_job` | Kuyruk yönetimi |
 | `upload_asset`, `list_assets` | Referans yükleme (sunucu yolu, URL, base64) → `asset_id` |
 | `list_models`, `server_status`, `free_vram` | Modeller ve sınırlar; GPU/VRAM, ComfyUI, kuyruk, disk; VRAM boşaltma |
+| `save_backup`, `list_backups` | OtoReklam kampanya verisinin zip yedeği `backups/` altına (en yeni 30); imzalı indirme bağlantıları |
 
 **Kuyruk (K-10):** VRAM'de aynı anda tek model türü durur. Video yüklüyken sıradaki videolar önce çalışır; tür değişince VRAM bir kez boşaltılır. Karışık kuyruk "önce bütün videolar, sonra bütün görseller" olarak işler. İşler Drive'da (`STUDIO_HOME/jobs`) tutulur; Colab yeniden başlarsa yarım kalan iş tekrar sıraya girer.
 

@@ -45,5 +45,24 @@ def upload_asset(base64_data: str = '', filename: str = '', media_type: str = ''
     return {'status': 'ok', 'asset': {'asset_id': 'asset_' + filename}}
 
 
+
+@server.tool()
+def save_backup(name: str, base64_data: str) -> dict:
+    """Store a backup zip in TEST_BACKUP_DIR (stands in for Drive)."""
+    import base64
+    from pathlib import Path
+    folder = Path(os.environ['TEST_BACKUP_DIR'])
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder/name).write_bytes(base64.b64decode(base64_data))
+    return {'saved': name, 'folder': str(folder)}
+
+
+@server.tool()
+def list_backups() -> dict:
+    """Backups newest first; file:// links stand in for the signed /files links."""
+    from pathlib import Path
+    items = sorted(Path(os.environ['TEST_BACKUP_DIR']).glob('*.zip'), reverse=True)
+    return {'backups': [{'name': p.name, 'url': p.as_uri()} for p in items]}
+
 if __name__ == '__main__':
     server.run(transport='stdio')
