@@ -62,7 +62,7 @@
     "image_result_path": "job.output_image"
   },
   "render": {
-    "engine": "ffmpeg"
+    "engine": "remotion"
   },
   "end_card": {
     "enabled": true,

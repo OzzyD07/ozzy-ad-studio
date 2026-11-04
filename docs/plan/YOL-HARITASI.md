@@ -82,7 +82,7 @@ Bitti sayılır: tek plandan dört içerik tipi de üretilip teslim klasörüne 
 - [x] AI video bitirme Remotion'da (`render.engine = "remotion"`); FFmpeg yolu varsayılan/yedek. Çok çekimli montaj hâlâ FFmpeg
 - [x] `tests/test_formats.py` (54 test); yerelde gerçek Remotion + Whisper ile post, şablon video ve 2 kesit denendi
 - [ ] OtoReklam istemcisiyle canlı uçtan uca (Colab açık + `.secrets/studio_token`)
-- [ ] Varsayılanı `remotion` yapmak (kullanıcı görünümü onaylayınca)
+- [x] Varsayılan bitirme Remotion (K-33); `"render": {"engine": "ffmpeg"}` veya `--srt` eski yolu kullanır
 
 ## Faz 6 — Günlük 2 gönderi akışı `[x]`
 Bitti sayılır: 14 günlük takvim, GPU bütçesine uygun format karışımıyla otomatik planlanır.
