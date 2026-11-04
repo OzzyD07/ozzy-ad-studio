@@ -60,11 +60,40 @@ def sync_code(branch='main'):
     if before == remote and current == branch:
         print('✅ Drive\'daki kod güncel:', run(['git', '-C', str(CODE), 'log', '-1', '--format=%h %s (%cd)', '--date=short']))
         return
-    changes = run(['git', '-C', str(CODE), 'log', '--oneline', f'{before}..{remote}']) if current == branch else ''
+    try:
+        changes = run(['git', '-C', str(CODE), 'log', '--oneline', f'{before}..{remote}']) if current == branch else ''
+    except subprocess.CalledProcessError:
+        changes = ''
     # Drive's copy is managed by this notebook; local edits there are not expected, so it follows GitHub exactly.
-    run(['git', '-C', str(CODE), 'checkout', '-q', '-B', branch, remote])
+    if not _force_checkout(branch, remote):
+        _reclone(branch)
+        return
     print(f'🔄 Kod güncellendi ({before[:7]} → {remote[:7]}):')
     print(changes or '(dal değişti: ' + branch + ')')
+
+
+def _force_checkout(branch, commit):
+    """checkout -f -B; a stale .git/index.lock (a session cut off mid-git on Drive) is removed first: nothing else
+    runs git on this copy at notebook start."""
+    lock = CODE/'.git'/'index.lock'
+    if lock.exists():
+        print('🧹 Önceki oturumdan kalan .git/index.lock silindi')
+        lock.unlink()
+    try:
+        run(['git', '-C', str(CODE), 'checkout', '-q', '-f', '-B', branch, commit])
+        return True
+    except subprocess.CalledProcessError as e:
+        print('⚠️  Drive\'daki kod güncellenemedi:', (e.stderr or e.stdout or '').strip()[-400:])
+        return False
+
+
+def _reclone(branch):
+    """Last resort: keep the broken copy aside (nothing is deleted) and clone a fresh one."""
+    aside = CODE.with_name(f'code.bozuk-{time.strftime("%Y%m%d-%H%M%S")}')
+    CODE.rename(aside)
+    print(f'📦 Bozuk kopya kenara alındı: {aside}  (sonra silebilirsiniz)')
+    run(['git', 'clone', '-q', '--branch', branch, REPO, str(CODE)])
+    print('✅ Kod yeniden kopyalandı:', run(['git', '-C', str(CODE), 'log', '-1', '--format=%h %s (%cd)', '--date=short']))
 
 
 # ---------- 2. models on Drive ----------

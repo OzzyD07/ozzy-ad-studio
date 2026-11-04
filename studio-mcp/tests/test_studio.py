@@ -283,5 +283,32 @@ class ColabCacheTest(unittest.TestCase):
             with patch.object(colab, 'CACHE_HEADROOM', 1e18):  # no room: Drive is used
                 self.assertIsNone(colab.cache_models([{'file': 'x', 'size': 1}], drive, tmp/'ssd2'))
 
+
+class ColabSyncTest(unittest.TestCase):
+    def test_stale_lock_and_local_edits_do_not_block_update(self):
+        import subprocess
+        from studio import colab
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            git = lambda *a, cwd=None: subprocess.run(['git', *a], cwd=cwd, check=True, capture_output=True, text=True)
+            origin = tmp/'origin'
+            git('init', '-q', '-b', 'main', str(origin))
+            git('config', 'user.email', 't@t', cwd=origin); git('config', 'user.name', 't', cwd=origin)
+            (origin/'a.txt').write_text('v1'); git('add', '.', cwd=origin); git('commit', '-qm', 'v1', cwd=origin)
+            code = tmp/'home'/'code'
+            with patch.object(colab, 'HOME', tmp/'home'), patch.object(colab, 'CODE', code),                     patch.object(colab, 'REPO', str(origin)):
+                colab.sync_code('main')
+                (origin/'a.txt').write_text('v2'); git('commit', '-qam', 'v2', cwd=origin)
+                (code/'.git'/'index.lock').write_text('')  # session cut off mid-git
+                (code/'a.txt').write_text('edited on Drive')
+                colab.sync_code('main')
+                self.assertEqual((code/'a.txt').read_text(), 'v2')
+                self.assertFalse((code/'.git'/'index.lock').exists())
+                with patch.object(colab, '_force_checkout', lambda *a: False):  # still broken: fresh clone
+                    (origin/'a.txt').write_text('v3'); git('commit', '-qam', 'v3', cwd=origin)
+                    colab.sync_code('main')
+                self.assertEqual((code/'a.txt').read_text(), 'v3')
+                self.assertEqual(len(list((tmp/'home').glob('code.bozuk-*'))), 1)
+
 if __name__ == '__main__':
     unittest.main()
