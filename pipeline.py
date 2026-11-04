@@ -450,6 +450,7 @@ def job_path(ws, identity):
 def acquire(value, ws, identity):
     from media import probe
     target = ws/'raw'/f'{identity}.mp4'
+    target.parent.mkdir(parents=True, exist_ok=True)
     tmp = target.with_suffix('.part.mp4')
     try:
         if str(value).startswith('https://'):

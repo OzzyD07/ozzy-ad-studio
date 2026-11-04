@@ -73,7 +73,7 @@ Bitti sayılır: yeni bir Colab oturumu tek "Hepsini çalıştır" ile güncel k
 - [x] Hız: hücre 3'te `MODEL_CACHE` = `drive` / `minimax` / `all` (K-31); seçilen modeller oturum için yerel SSD'ye kopyalanır, ComfyUI önce SSD'den okur. Gerçek süre kazancı ilk Colab oturumunda ölçülecek
 - [ ] Notebook'taki geçici hücreyi silmek (kullanıcı yapacak; GitHub'daki sürümde yok)
 
-## Faz 5 — OtoReklam entegrasyonu `[~]`
+## Faz 5 — OtoReklam entegrasyonu `[x]`
 Bitti sayılır: tek plandan dört içerik tipi de üretilip teslim klasörüne düşer.
 - [x] İçerik tipleri: `ai_video`, `template_video`, `image_post`, `carousel` (`formats.py`, plan + run)
 - [x] `config.json → mcp`: `image_tool`, `image_arguments`, `image_result_path` (varsayılanlar kodda)
@@ -81,7 +81,7 @@ Bitti sayılır: tek plandan dört içerik tipi de üretilip teslim klasörüne 
 - [x] Bir AI klibinden birden çok kesit (`cuts`: kırpma, hook, altyazı stili); bitiş kartı konuşmayı bekler
 - [x] AI video bitirme Remotion'da (`render.engine = "remotion"`); FFmpeg yolu varsayılan/yedek. Çok çekimli montaj hâlâ FFmpeg
 - [x] `tests/test_formats.py` (54 test); yerelde gerçek Remotion + Whisper ile post, şablon video ve 2 kesit denendi
-- [ ] OtoReklam istemcisiyle canlı uçtan uca (Colab açık + `.secrets/studio_token`)
+- [x] OtoReklam istemcisiyle canlı uçtan uca (2026-11-04): `mcp-tools` 16 araç, `yedekle` Drive'a gidip geri geldi, `run` işi sorgulayıp indirdi ve Remotion'da bitirdi. MiniMax max 4 sn: 768×1344, 10 adım, 118 sn (yükleme dahil), gren yok
 - [x] Varsayılan bitirme Remotion (K-33); `"render": {"engine": "ffmpeg"}` veya `--srt` eski yolu kullanır
 
 ## Faz 6 — Günlük 2 gönderi akışı `[x]`
